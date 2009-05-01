@@ -89,7 +89,7 @@ class XhotkeysDaemonTest(unittest.TestCase):
         self.assertEqual(('hello\n', None), popen.communicate())
 
 
-    def test_set_signal_handlers(self):        
+    def test_set_signal_handlers(self):
         server = xhotkeys.XhotkeysServer(
             Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask)
         pidfile = tempfile.NamedTemporaryFile()

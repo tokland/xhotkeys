@@ -43,7 +43,7 @@ import Xlib.X
 import configobj
 
 # Application modules
-import misc
+from xhotkeys import misc
 import xhotkeys
 
 # Default values
@@ -192,8 +192,8 @@ def write_pidfile(path):
 def main(args):
     """Parse arguments and start a xhotkeys server reading a given 
     configuration file."""
-    usage = """usage: xhotkeyd [options]\n
-    
+    usage = """usage: xhotkeyd [options]
+        
     Bind keys and mouse combinations to commands for X-Windows"""
     parser = optparse.OptionParser(usage)  
     parser.add_option('-v', '--verbose', default=0, dest='verbose_level', 
@@ -221,4 +221,4 @@ def main(args):
     return start_server(misc.partial_function(get_config, configfile), pidfile)
         
 if __name__ == '__main__':
-    sys.exit(main(os.path.basename(sys.argv[1:])))
+    sys.exit(main(sys.argv[1:]))
