@@ -1,7 +1,5 @@
 #!/usr/bin/python
 import unittest
-import xhotkeys
-import xhotkeysd
 import subprocess
 import signal
 import tempfile
@@ -9,8 +7,10 @@ import mocks
 import sys
 import os
 import StringIO
-
 import Xlib.X
+
+import xhotkeys
+from xhotkeys import xhotkeysd
 
 config = {
     "calculator": { 

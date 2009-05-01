@@ -2,7 +2,7 @@ import unittest
 
 class AllTestSuite(unittest.TestSuite):
     all_tests = [
-        "test_xhotkeys",
+        "test_xhotkeyslib",
         "test_xhotkeysd",
     ]
     def __init__(self):
