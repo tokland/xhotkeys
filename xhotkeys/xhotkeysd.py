@@ -46,7 +46,8 @@ import configobj
 from xhotkeys import misc
 import xhotkeys
 
-# Default values
+# Global values
+VERSION = "0.0.1" 
 CONFIGURATION_FILES = ["~/.xhotkeysrc", "/etc/xhotkeys.conf"]
 PIDFILE = "~/.xhotkeys.pid"
 
@@ -195,7 +196,7 @@ def main(args):
     usage = """usage: xhotkeyd [options]
         
     Bind keys and mouse combinations to commands for X-Windows"""
-    parser = optparse.OptionParser(usage)  
+    parser = optparse.OptionParser(usage, version=VERSION)  
     parser.add_option('-v', '--verbose', default=0, dest='verbose_level', 
         action="count", help='Increase verbose level (maximum: 3)')
     parser.add_option('-c', '--config-file', dest='cfile', default=None, 
