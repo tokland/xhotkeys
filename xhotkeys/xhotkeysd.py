@@ -37,6 +37,9 @@ import signal
 import logging
 import optparse
 import subprocess
+import inspect
+import re
+
 
 # Third-party mdoules
 import Xlib.X 
@@ -69,7 +72,8 @@ def set_verbose_level(verbose_level):
     """Set verbose level for logging.
     
     See VERBOSE_LEVELS constant for allowed values."""
-    level = VERBOSE_LEVELS[max(0, min(verbose_level, len(VERBOSE_LEVELS)-1))]
+    nlevel = max(0, min(verbose_level, len(VERBOSE_LEVELS)-1))
+    level = VERBOSE_LEVELS[nlevel]
     logging.basicConfig(level=level, stream=sys.stderr,  
         format='%(levelname)s: %(message)s')
         
@@ -142,7 +146,7 @@ def configure_server(server, config):
             server.add_button_grab(int(skey), mask, on_hotkey, command, 
                 shell, directory)
             
-def start_server(get_config_callback, pidfile=None):
+def start_server(get_config_callback, pidfile=None, ignore_mask=None):
     """
     Start a xhotkeys server linking key bindings to commands.
         
@@ -165,7 +169,8 @@ def start_server(get_config_callback, pidfile=None):
     """
     write_pidfile(pidfile)
     logging.info("starting xhotkeys server")
-    ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask
+    if ignore_mask is None:
+        ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask
     logging.debug("ignore mask value: %s" % ignore_mask)
     server = xhotkeys.XhotkeysServer(ignore_mask)
     set_signal_handlers(server, pidfile)
@@ -189,7 +194,21 @@ def write_pidfile(path):
     """Write a pidfile with current process PID."""
     logging.debug("creating pidfile: %s" % path)
     open(path, "w").write("%d\n" % os.getpid())
-                 
+
+def show_keyboard_info(ignore_mask, stream=None):
+    """Show keyboard info (keys and available modifiers) to stream."""
+    if stream is None:
+        stream = sys.stdout
+    keys = [re.sub("^XK_", "", k) for (k, v) in inspect.getmembers(Xlib.XK) 
+        if re.match("^XK_", k)]
+    modifiers = ["ShiftMask", "LockMask", "ControlMask", "Mod1Mask", 
+        "Mod2Mask", "Mod3Mask", "Mod4Mask", "Mod5Mask"]
+    modifiers2 = [mod for mod in modifiers 
+        if getattr(Xlib.X, mod) & ~ignore_mask]
+    stream.write("Keyboard info:\n\n")
+    stream.write("Available key symbols: %s\n\n" % ", ".join(keys))
+    stream.write("Available key modifiers: %s\n\n" % ", ".join(modifiers2)) 
+                     
 def main(args):
     """Parse arguments and start a xhotkeys server reading a given 
     configuration file."""
@@ -201,14 +220,22 @@ def main(args):
         action="count", help='Increase verbose level (maximum: 3)')
     parser.add_option('-c', '--config-file', dest='cfile', default=None, 
         metavar='FILE', type='string', help='Alternative configuration file')        
-    parser.add_option('-i', '--pid-file', dest='pidfile', default=None, 
-        metavar='FILE', type='string', help='Alternative pidfile')        
+    parser.add_option('-p', '--pid-file', dest='pidfile', default=None, 
+        metavar='FILE', type='string', help='Alternative pidfile')
+    parser.add_option('-i', '--key-info', dest='keyinfo', default=False, 
+        action='store_true', help='Show keyboard info')
+                        
     options, args = parser.parse_args(args)
     misc.verbose_level = options.verbose_level
-        
+
+    ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask        
     # Use misc.debug as debug function for all this module
     set_verbose_level((1 if options.verbose_level is None 
         else options.verbose_level))
+    
+    if options.keyinfo:
+        show_keyboard_info(ignore_mask)
+        return
         
     # Get absolute path for the files as current directory is likely to change
     configuration_files = [os.path.expanduser(path) for path in 
@@ -219,7 +246,8 @@ def main(args):
         logging.critical("configuration files not found: %s" % args)
         return 1
     pidfile = os.path.abspath(os.path.expanduser(options.pidfile or PIDFILE))
-    return start_server(misc.partial_function(get_config, configfile), pidfile)
+    return start_server(misc.partial_function(get_config, configfile), 
+        pidfile, ignore_mask)
         
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

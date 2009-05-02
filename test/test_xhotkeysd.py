@@ -150,12 +150,24 @@ class XhotkeysDaemonTest(unittest.TestCase):
         self.assertEqual(os.getpid(), 
             int(open(pidfile.name).read()))
 
+    def test_show_keyboard_info(self):
+        ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask
+        fd = StringIO.StringIO()    
+        xhotkeysd.show_keyboard_info(ignore_mask, stream=fd)
+        self.assertTrue(fd.getvalue())
+        
     def test_main(self):
         conf = tempfile.NamedTemporaryFile()
         conf.write(config_contents)        
         xhotkeysd.start_server = mocks.MockCallable()
         xhotkeysd.main(["-c", conf.name])
         self.assertTrue(mocks.get_calls_args(xhotkeysd.start_server)) 
+
+    def test_main_keyboard_info(self):
+        sys.stdout = StringIO.StringIO()
+        xhotkeysd.main(["-i"])
+        self.assertTrue(sys.stdout.getvalue())
+        
                                                         
 def suite():
     return unittest.TestLoader().loadTestsFromTestCase(XhotkeysDaemonTest)
