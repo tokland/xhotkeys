@@ -7,7 +7,6 @@ Configuration file (similar to INI-files) should look like this:
     # xhotkeys.conf
 
     [calculator]
-        name = Calculator
         binding-type = keyboard
         binding = <ControlMask><Mod1Mask>C
         directory = ~
@@ -15,7 +14,6 @@ Configuration file (similar to INI-files) should look like this:
         shell = no
 
     [abiword]
-        name = Abiword
         binding-type = mouse
         binding = <ControlMask><Mod1Mask>2
         directory = ~/mydocs/
@@ -26,8 +24,10 @@ And the daemon can be started from the shell this way:
 
 $ xhotkeysd -f xhotkeys.conf
 
-If the configuration file is not specified, by default ~/.xhotkeysrc or 
-/etc/xhotkeys.conf files will be used. Pidfile is ~/.xhotkeys.pid by default.
+If the configuration file is not specified, ~/.xhotkeysrc or 
+/etc/xhotkeys.conf files will be used. 
+
+Pidfile is stored at ~/.xhotkeys.pid by default.
 """
 import os
 import re
@@ -38,8 +38,6 @@ import logging
 import optparse
 import subprocess
 import inspect
-import re
-
 
 # Third-party mdoules
 import Xlib.X 
@@ -55,7 +53,6 @@ CONFIGURATION_FILES = ["~/.xhotkeysrc", "/etc/xhotkeys.conf"]
 PIDFILE = "~/.xhotkeys.pid"
 
 # Verbose levels
-
 VERBOSE_LEVELS = {
     0: logging.CRITICAL,
     1: logging.ERROR,
@@ -92,7 +89,7 @@ def on_sigchild(signum, frame):
     """Called when a child process ends."""
     logging.debug("on_sigchild: signum=%s, frame=%s" % (signum, frame))    
     pid, returncode = os.wait()
-    logging.info("process %d terminated with return code %s" % (pid, returncode))
+    logging.info("process %d terminated (return code %s)" % (pid, returncode))
 
 def on_sighup(signum, frame):
     """Called when a SIGHUP signal is received. Reload configuration"""
@@ -131,7 +128,6 @@ def configure_server(server, config):
         modifiers = re.findall("<(.*?)>", smodifiers)
         mask = sum(getattr(Xlib.X, modifier) for modifier in modifiers)
         
-        # Shell can be a string, here we decide which values are considered true
         shell = (options["shell"].lower() in ("true", "yes", "on", "1"))
         command = (options["command"] if shell else 
             shlex.split(options["command"]))
@@ -156,7 +152,6 @@ def start_server(get_config_callback, pidfile=None, ignore_mask=None):
         
     >>> config = {
         "calculator": { 
-            "name": "Calculator",
             "binding": "<ControlMask><Mod1Mask>C",
             "binding-type": "keyboard",
             "directory": "~",
@@ -186,9 +181,10 @@ def start_server(get_config_callback, pidfile=None, ignore_mask=None):
 
 def get_config(configfile):
     """Load configfile and return a ConfigObj object."""
+    if isinstance(configfile, basestring) and not os.path.isfile(configfile):
+        logging.warning("configuration file not found: %s" % configfile)
     logging.info("load configuration: %s" % configfile)
-    config = configobj.ConfigObj(configfile)
-    return config     
+    return configobj.ConfigObj(configfile)
 
 def write_pidfile(path):
     """Write a pidfile with current process PID."""
@@ -216,8 +212,8 @@ def main(args):
         
     Bind keys and mouse combinations to commands for X-Windows"""
     parser = optparse.OptionParser(usage, version=VERSION)  
-    parser.add_option('-v', '--verbose', default=0, dest='verbose_level', 
-        action="count", help='Increase verbose level (maximum: 3)')
+    parser.add_option('-v', '--verbose', default=1, dest='verbose_level', 
+        action="count", help='Increase verbose level')
     parser.add_option('-c', '--config-file', dest='cfile', default=None, 
         metavar='FILE', type='string', help='Alternative configuration file')        
     parser.add_option('-p', '--pid-file', dest='pidfile', default=None, 
@@ -227,11 +223,8 @@ def main(args):
                         
     options, args = parser.parse_args(args)
     misc.verbose_level = options.verbose_level
-
     ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask        
-    # Use misc.debug as debug function for all this module
-    set_verbose_level((1 if options.verbose_level is None 
-        else options.verbose_level))
+    set_verbose_level(options.verbose_level) 
     
     if options.keyinfo:
         show_keyboard_info(ignore_mask)
