@@ -4,10 +4,9 @@ import gtk
 from kiwi.ui import gadgets
 from kiwi.ui.delegates import Delegate, SlaveDelegate
 from kiwi.ui.objectlist import ObjectList, Column
-from kiwi.ui.dialogs import yesno
 
-#####  ObjectListBox start
 def get_current_row_iter(treeview):
+    """Get iter of selected row"""
     model = treeview.get_model()
     iter1 = treeview.get_selection().get_selected()[1]
     return iter1
@@ -67,6 +66,3 @@ class ObjectListBox(gtk.HBox):
     def on_move_down__clicked(self, button):
         move_current_row(self.object_list.get_treeview(), +1)
         self.on_item_selected(self.object_list, None)
-
-#####  ObjectListBox end
-
