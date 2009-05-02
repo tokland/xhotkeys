@@ -7,17 +7,15 @@ Configuration file (similar to INI-files) should look like this:
     # xhotkeys.conf
 
     [calculator]
-        binding-type = keyboard
         binding = <ControlMask><Mod1Mask>C
-        directory = ~
         command = /usr/bin/xcalc
+        directory = ~
         shell = no
 
     [abiword]
-        binding-type = mouse
-        binding = <ControlMask><Mod1Mask>2
-        directory = ~/mydocs/
+        binding = <ControlMask><Mod1Mask>Button2
         command = abiword ~/mydocs/readme.txt
+        directory = ~/mydocs/
         shell = yes
     
 And the daemon can be started from the shell this way:
@@ -52,27 +50,9 @@ VERSION = "0.0.1"
 CONFIGURATION_FILES = ["~/.xhotkeysrc", "/etc/xhotkeys.conf"]
 PIDFILE = "~/.xhotkeys.pid"
 
-# Verbose levels
-VERBOSE_LEVELS = {
-    0: logging.CRITICAL,
-    1: logging.ERROR,
-    2: logging.WARNING,
-    3: logging.INFO,
-    4: logging.DEBUG,
-}
-
 class XhotkeysServerReload(Exception):
     """Raised when the configuration must be reload."""
     pass
-
-def set_verbose_level(verbose_level):
-    """Set verbose level for logging.
-    
-    See VERBOSE_LEVELS constant for allowed values."""
-    nlevel = max(0, min(verbose_level, len(VERBOSE_LEVELS)-1))
-    level = VERBOSE_LEVELS[nlevel]
-    logging.basicConfig(level=level, stream=sys.stderr,  
-        format='%(levelname)s: %(message)s')
         
 def on_terminate(signum, frame, server, pidfile):
     """Called when the process is asked to terminate."""
@@ -125,6 +105,13 @@ def configure_server(server, config):
     for item, options in config.iteritems():
         logging.debug("configuring: %s (%s)" % (item, options))
         smodifiers, skey = re.search("(<.*>)(.*)$", options["binding"]).groups()
+        match = re.match("Button(\d+)$", skey)
+        if match:
+            binding_type = "mouse"
+            button = int(match.group(1))
+        else:
+            binding_type = "keyboard"
+            keysym = xhotkeys.get_keysym(skey) 
         modifiers = re.findall("<(.*?)>", smodifiers)
         mask = sum(getattr(Xlib.X, modifier) for modifier in modifiers)
         
@@ -132,15 +119,13 @@ def configure_server(server, config):
         command = (options["command"] if shell else 
             shlex.split(options["command"]))
         directory = options["directory"]
-        binding_type = options.get("binding-type", "keyboard")
+        args = [mask, on_hotkey, command, shell, directory]
         if binding_type == "keyboard":
             logging.info("grabbing key: %s/%s/%s" % (mask, command, shell))
-            server.add_key_grab(xhotkeys.get_keysym(skey), mask, on_hotkey, 
-                command, shell, directory)
+            server.add_key_grab(keysym, *args)
         elif binding_type == "mouse":
-            logging.info("button: %s/%s/%s" % (mask, command, shell))
-            server.add_button_grab(int(skey), mask, on_hotkey, command, 
-                shell, directory)
+            logging.info("grabbing button: %s/%s/%s" % (mask, command, shell))
+            server.add_button_grab(button, *args)
             
 def start_server(get_config_callback, pidfile=None, ignore_mask=None):
     """
@@ -153,7 +138,6 @@ def start_server(get_config_callback, pidfile=None, ignore_mask=None):
     >>> config = {
         "calculator": { 
             "binding": "<ControlMask><Mod1Mask>C",
-            "binding-type": "keyboard",
             "directory": "~",
             "command": "xcalc",
             "shell": "1",
@@ -184,7 +168,8 @@ def get_config(configfile):
     if isinstance(configfile, basestring) and not os.path.isfile(configfile):
         logging.warning("configuration file not found: %s" % configfile)
     logging.info("load configuration: %s" % configfile)
-    return configobj.ConfigObj(configfile)
+    config = configobj.ConfigObj(configfile)
+    return config
 
 def write_pidfile(path):
     """Write a pidfile with current process PID."""
@@ -224,7 +209,7 @@ def main(args):
     options, args = parser.parse_args(args)
     misc.verbose_level = options.verbose_level
     ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask        
-    set_verbose_level(options.verbose_level) 
+    misc.set_verbose_level(options.verbose_level) 
     
     if options.keyinfo:
         show_keyboard_info(ignore_mask)

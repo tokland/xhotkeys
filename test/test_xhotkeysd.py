@@ -14,17 +14,13 @@ from xhotkeys import xhotkeysd
 
 config = {
     "calculator": { 
-        "name": "Calculator",
         "binding": "<ControlMask><Mod1Mask>1",
-        "binding-type": "keyboard",
         "directory": "~",
         "command": "xcalc",
         "shell": "yes",
     },
     "abiword": {
-        "name": "Abiword",
-        "binding-type": "mouse",
-        "binding": "<ControlMask><Mod1Mask>2",
+        "binding": "<ControlMask><Mod1Mask>Button2",
         "directory": "~/mydocs/",
         "command": "abiword ~/mydocs/readme.txt",
         "shell": "no",
@@ -33,17 +29,13 @@ config = {
 
 config_contents = """
     [calculator]
-        name = Calculator
-        binding-type = keyboard
         binding = <ControlMask><Mod1Mask>1
         directory = ~
         command = xcalc
         shell = yes
 
     [abiword]
-        name = Abiword
-        binding-type = mouse
-        binding = <ControlMask><Mod1Mask>2
+        binding = <ControlMask><Mod1Mask>Button2
         directory = ~/mydocs/
         command = abiword ~/mydocs/readme.txt
         shell = no
@@ -87,7 +79,6 @@ class XhotkeysDaemonTest(unittest.TestCase):
             shell=False, directory="/bin", stdout=subprocess.PIPE)
         self.assertTrue(popen)
         self.assertEqual(('hello\n', None), popen.communicate())
-
 
     def test_set_signal_handlers(self):
         server = xhotkeys.XhotkeysServer(
