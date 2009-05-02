@@ -2,6 +2,7 @@ import unittest
 
 class AllTestSuite(unittest.TestSuite):
     all_tests = [
+        "test_misc",
         "test_xhotkeyslib",
         "test_xhotkeysd",
     ]
