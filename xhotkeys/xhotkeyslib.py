@@ -102,9 +102,9 @@ def get_keycode_to_modifier_mask_mapping(modifiers=None, display=None):
             continue
         for keycode in keycodes:
             for kindex in range(4):
-                keycodes2 = display.keysym_to_keycodes(
-                    display.keycode_to_keysym(keycode, kindex))
-                for keycode2 in misc.flatten(keycodes2):
+                keysym = display.keycode_to_keysym(keycode, kindex)
+                allkeycodes = misc.flatten(display.keysym_to_keycodes(keysym))
+                for keycode2 in allkeycodes:
                     mapping[keycode2] = mask
     return mapping
             
@@ -182,5 +182,4 @@ class XhotkeysServer:
                 callback, args = self.callbacks[key]
                 callback(*args)
             except KeyError:
-                from ipdb import set_trace; set_trace()
                 print "warning: undefined event received: %s" % list(key)
