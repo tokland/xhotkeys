@@ -30,6 +30,7 @@ import Xlib.display
 
 # TODO:
 #
+# - grab buttons
 # - add browse button to command and directory
 # - tests for GUI
 # - use classes for windows
@@ -72,10 +73,8 @@ def on_binding_entry__key_press_event(entry, event, form_window, button):
         text = get_hotkey_text(entry.keycodes)
         entry.set_text(text)    
     else:
-        if keysym == Xlib.XK.XK_BackSpace:
-            text = ""
-        else:
-            text = get_hotkey_text(entry.keycodes, keycode)
+        text = ("" if keysym == Xlib.XK.XK_BackSpace else
+            get_hotkey_text(entry.keycodes, keycode))
         entry.set_text(text)
         button.set_sensitive(True)    
         entry.set_sensitive(False)
@@ -97,6 +96,7 @@ def on_binding_button__clicked(button, form_window, entry):
     entry.set_sensitive(True)
     form_window.recording = True    
     entry.grab_focus()
+    entry.set_text("Grabbing...")
     entry.keycodes = []
     entry.old_text = entry.get_text()
     entry.connect("key-press-event", on_binding_entry__key_press_event, form_window, button)
