@@ -31,33 +31,39 @@ def move_current_row(treeview, offset):
     model.swap(iter1, iter2)
 
 class ObjectListBox(gtk.HBox):
-    def __init__(self, columns, values):
+    def __init__(self, columns, values, updown=False, selection_mode=gtk.SELECTION_BROWSE):
         gtk.HBox.__init__(self)
+        
         # Object list
-        object_list = ObjectList(columns, values, sortable=False)
+        object_list = ObjectList(columns, values, sortable=False, mode=selection_mode)
         self.object_list = object_list
         self.pack_start(object_list)
         actions_box = gtk.VBox()
         self.pack_start(actions_box, expand=False, fill=False)
         object_list.connect('selection-changed', self.on_item_selected)
+        
         # Actions box
+        if updown:
+            move_up = gtk.Button(label="Move Up", stock=gtk.STOCK_GO_UP)
+            actions_box.pack_start(move_up, expand=False, fill=False)
+            move_up.connect("clicked", self.on_move_up__clicked)
+            move_down = gtk.Button(label="Move Down", stock=gtk.STOCK_GO_DOWN)
+            move_down.connect("clicked", self.on_move_down__clicked)
+            actions_box.pack_start(move_down, expand=False, fill=False)
+            self.move_up = move_up
+            self.move_down = move_down
         self.actions_box = actions_box
-        move_up = gtk.Button(label="Move Up", stock=gtk.STOCK_GO_UP)
-        actions_box.pack_start(move_up, expand=False, fill=False)
-        move_up.connect("clicked", self.on_move_up__clicked)
-        move_down = gtk.Button(label="Move Down", stock=gtk.STOCK_GO_DOWN)
-        move_down.connect("clicked", self.on_move_down__clicked)
-        actions_box.pack_start(move_down, expand=False, fill=False)
-        self.move_up = move_up
-        self.move_down = move_down
+        self.updown = updown
+        
         # Set initial up/down buttons sensitivity
         self.on_item_selected(self.object_list, None)
 
     def on_item_selected(self, object_list, item):
-        can_move_up = can_current_row_move(self.object_list.get_treeview(), -1)
-        self.move_up.set_sensitive(can_move_up)
-        can_move_down = can_current_row_move(self.object_list.get_treeview(), +1)
-        self.move_down.set_sensitive(can_move_down)
+        if self.updown:
+            can_move_up = can_current_row_move(self.object_list.get_treeview(), -1)
+            self.move_up.set_sensitive(can_move_up)
+            can_move_down = can_current_row_move(self.object_list.get_treeview(), +1)
+            self.move_down.set_sensitive(can_move_down)
             
     def on_move_up__clicked(self, button):
         move_current_row(self.object_list.get_treeview(), -1)

@@ -14,37 +14,33 @@ from xhotkeys import xhotkeysd
 
 config = {
     "calculator": { 
-        "binding": "<ControlMask><Mod1Mask>1",
+        "binding": "<Control><Alt>1",
         "directory": "~",
         "command": "xcalc",
-        "shell": "yes",
     },
     "abiword": {
-        "binding": "<ControlMask><Mod1Mask>Button2",
+        "binding": "<Control><Alt>Button2",
         "directory": "~/mydocs/",
         "command": "abiword ~/mydocs/readme.txt",
-        "shell": "no",
     },        
 }
 
 config_contents = """
     [calculator]
-        binding = <ControlMask><Mod1Mask>1
+        binding = <Control><Alt>1
         directory = ~
         command = xcalc
-        shell = yes
 
     [abiword]
-        binding = <ControlMask><Mod1Mask>Button2
+        binding = <Control><Alt>Button2
         directory = ~/mydocs/
         command = abiword ~/mydocs/readme.txt
-        shell = no
 """
             
 class XhotkeysDaemonTest(unittest.TestCase):
         
     def setUp(self):
-        pass
+        self.display = Xlib.display.Display()
         
     def test_get_on_terminate(self):
         server = mocks.Mock()
@@ -96,9 +92,11 @@ class XhotkeysDaemonTest(unittest.TestCase):
 
         server.add_key_grab = mocks.MockCallable()
         server.add_button_grab = mocks.MockCallable()
-        xhotkeysd.configure_server(server, config)
+        fd = StringIO.StringIO(config_contents)
+        hotkeys = xhotkeysd.get_config(fd)
+        xhotkeysd.configure_server(server, hotkeys)
         expected_key_grabs = [(
-            Xlib.XK.XK_1,
+            self.display.keysym_to_keycode(Xlib.XK.XK_1),
             Xlib.X.ControlMask | Xlib.X.Mod1Mask, 
             xhotkeysd.on_hotkey, 
             'xcalc', 
@@ -109,8 +107,8 @@ class XhotkeysDaemonTest(unittest.TestCase):
             2,
             Xlib.X.ControlMask | Xlib.X.Mod1Mask, 
             xhotkeysd.on_hotkey, 
-            ['abiword', '~/mydocs/readme.txt'], 
-            False, 
+            'abiword ~/mydocs/readme.txt', 
+            True, 
             '~/mydocs/'
         )]
         self.assertEqual(expected_button_grabs,
@@ -120,7 +118,7 @@ class XhotkeysDaemonTest(unittest.TestCase):
             
     def test_start_server(self):
         def get_config_callback():
-            return config                      
+            return config
         server = mocks.Mock
         server.add_key_grab = mocks.MockCallable()
         server.add_button_grab = mocks.MockCallable()
@@ -132,8 +130,9 @@ class XhotkeysDaemonTest(unittest.TestCase):
         xhotkeysd.start_server(get_config_callback, pidfile=pidfile.name)
                                             
     def test_get_config(self):
-        self.assertEqual(sorted(config.items()), 
-            sorted(xhotkeysd.get_config(StringIO.StringIO(config_contents)).items()))
+        fd = StringIO.StringIO(config_contents)
+        items = [(x.name, x.get_attributes()) for x in xhotkeysd.get_config(fd)]
+        self.assertEqual(config, dict(items))             
 
     def test_write_pidfile(self):
         pidfile = tempfile.NamedTemporaryFile()                      

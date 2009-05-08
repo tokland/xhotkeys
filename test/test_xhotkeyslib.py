@@ -54,7 +54,7 @@ class XhotkeysTest(unittest.TestCase):
         grab_keys = xhotkeys.grab_key(
             self.display, 
             self.root, 
-            keysym=Xlib.XK.XK_A, 
+            keycode=self.display.keysym_to_keycode(Xlib.XK.XK_A), 
             modifiers=Xlib.X.ControlMask | Xlib.X.Mod1Mask,
             ignore_masks=ignore_masks)
         self.assertEqual(expected_grab_keys, grab_keys)
@@ -90,7 +90,7 @@ class XhotkeysServerTest(unittest.TestCase):
     def test_add_key_grab(self):
         callback = mocks.MockCallable()    
         self.server.add_key_grab(
-            keysym=Xlib.XK.XK_A, 
+            keycode=self.server.display.keysym_to_keycode(Xlib.XK.XK_A), 
             modifiers=Xlib.X.ControlMask | Xlib.X.Mod1Mask, 
             callback=callback)
         self.assertEqual(8, len(mocks.get_calls_args(self.root.grab_key)))
@@ -137,7 +137,7 @@ class XhotkeysServerTest(unittest.TestCase):
         callback1 = mocks.MockCallable()    
         callback2 = mocks.MockCallable()
         self.server.add_key_grab(
-            keysym=Xlib.XK.XK_A, 
+            keycode=self.server.display.keysym_to_keycode(Xlib.XK.XK_A), 
             modifiers=Xlib.X.ControlMask | Xlib.X.Mod1Mask, 
             callback=callback1)
         self.server.add_button_grab(

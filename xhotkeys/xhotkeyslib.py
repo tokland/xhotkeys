@@ -16,11 +16,25 @@ Listen to keyboard and mouse combinations and run callbacks. Example:
 >>> server.run() 
 """   
 import time
+import inspect
 
 # Xlib modules
 import Xlib.display
 import Xlib.XK
 import Xlib.X
+
+from xhotkeys import misc
+
+MODIFIERS_MASK = [
+    Xlib.X.ShiftMask,
+    Xlib.X.LockMask,  
+    Xlib.X.ControlMask,
+    Xlib.X.Mod1Mask,
+    Xlib.X.Mod2Mask,
+    Xlib.X.Mod3Mask,
+    Xlib.X.Mod4Mask,
+    Xlib.X.Mod5Mask,
+]
 
 def get_keysym(string):
     """Return keysymbol from key string.
@@ -29,6 +43,25 @@ def get_keysym(string):
     Xlib.XK.XK_Cancel
     """
     return getattr(Xlib.XK, "XK_" + string)
+
+def get_keycode(string, display=None):
+    """Return keycode from from key string."""
+    if display is None:
+        display = Xlib.display.Display()
+    return display.keysym_to_keycode(get_keysym(string))
+
+def keycode_to_keysym(keycode, index=0, display=None):
+    """Return keysym from keycode"""
+    if display is None:
+        display = Xlib.display.Display()
+    return display.keycode_to_keysym(keycode, index)
+
+def get_keysym_to_string_mapping(display=None):
+    """Return pairs (keysym, string)."""
+    if display is None:
+        display = Xlib.display.Display()
+    return dict((keysym, name[len("XK_"):]) for (name, keysym) 
+        in inspect.getmembers(Xlib.XK) if name.startswith("XK_"))
     
 def get_mask_combinations(mask):
     """Get all combinations for a mask"""
@@ -40,15 +73,14 @@ def ungrab(display, root):
     root.ungrab_key(Xlib.X.AnyKey, Xlib.X.AnyModifier)
     root.ungrab_button(Xlib.X.AnyButton, Xlib.X.AnyModifier)
             
-def grab_key(display, root, keysym, modifiers, ignore_masks):
+def grab_key(display, root, keycode, modifiers, ignore_masks):
     """Grab a key symbol (with an optional modifier)"""
-    def _grab(keycode, mode):
+    def _grab(mode):
         for mask in ignore_masks:
             mod = modifiers | mask
             root.grab_key(keycode, mod, 0, mode, mode)
             yield (keycode, mod)
-    keycode = display.keysym_to_keycode(keysym)
-    return list(_grab(keycode=keycode, mode=Xlib.X.GrabModeAsync))
+    return list(_grab(mode=Xlib.X.GrabModeAsync))
 
 def grab_button(display, root, button, modifiers, ignore_masks):
     """Grab a key symbol (with an optional modifier)"""
@@ -59,8 +91,23 @@ def grab_button(display, root, button, modifiers, ignore_masks):
                 mode, mode, 0, 0)
             yield (button, mod)
     return list(_grab(button=button, mode=Xlib.X.GrabModeAsync))
-            
 
+def get_keycode_to_modifier_mask_mapping(modifiers=None, display=None):
+    """Return a dictionary of pairs (keycode, modifier_mask)."""
+    if display is None:
+        display = Xlib.display.Display()
+    mapping = {}
+    for keycodes, mask in zip(display.get_modifier_mapping(), MODIFIERS_MASK):
+        if modifiers is not None and mask not in modifiers:
+            continue
+        for keycode in keycodes:
+            for kindex in range(4):
+                keycodes2 = display.keysym_to_keycodes(
+                    display.keycode_to_keysym(keycode, kindex))
+                for keycode2 in misc.flatten(keycodes2):
+                    mapping[keycode2] = mask
+    return mapping
+            
 class XhotkeysServer:
     """
     Listen to keyboard and mouse hotkeys and run callbacks.
@@ -101,10 +148,9 @@ class XhotkeysServer:
         self.ignore_masks = get_mask_combinations(ignore_mask)
         self.callbacks = {}
     
-    def add_key_grab(self, keysym, modifiers, callback, *args):
+    def add_key_grab(self, keycode, modifiers, callback, *args):
         """Add a keyboard grab to server. Look Xlib.X for key symbols"""        
-        keycode = self.display.keysym_to_keycode(keysym)
-        grab_key(self.display, self.root, keysym, modifiers, self.ignore_masks)
+        grab_key(self.display, self.root, keycode, modifiers, self.ignore_masks)
         self._add_callback(Xlib.X.KeyPress, keycode, modifiers, callback, args)
 
     def add_button_grab(self, button, modifiers, callback, *args):
@@ -136,4 +182,5 @@ class XhotkeysServer:
                 callback, args = self.callbacks[key]
                 callback(*args)
             except KeyError:
-                print "warning: undefined event received: %s" % list(key)        
+                from ipdb import set_trace; set_trace()
+                print "warning: undefined event received: %s" % list(key)

@@ -26,9 +26,13 @@ setup(
     author="Arnau Sanchez",
     author_email="tokland@gmail.com",
     url="http://code.google.com/p/xhotkeys",
-    packages=["xhotkeys"],
+    packages=[  
+        "xhotkeys",
+        "xhotkeys/gui"
+    ],
     scripts=[
 		"bin/xhotkeysd",
+		"bin/xhotkeys-gui",
 	],
     license="GNU Public License v3.0",
     long_description=" ".join(__doc__.strip().splitlines()),

@@ -1,8 +1,42 @@
 
 = Introduction =
 
-TODO
+Xhotkeys provides a simple and easily configurable hotkey launcher for the X-Window System, binding keys and mouse buttons to configurable commands. It should work on all desktops (Gnome, KDE, Xfce, ...) available for the UNIX-like operating systems (GNU/Linux, BSD, ...). At this moment xhotkeys configuration file must be editer manually, but future versions will provide a GTK configurator.
 
-= Details =
+= Install =
 
-TODO
+{{{
+$ sudo python setup.py install
+}}}
+
+= Usage =
+
+Create the configuration file: $HOME/.xhotkeysrc:
+
+{{{
+[calculator]
+    name = Calculator
+    binding-type = keyboard
+    binding = <ControlMask>2
+    directory = ~
+    command = /usr/bin/xcalc
+    shell = no
+
+[abiword]
+    name = Abiword
+    binding-type = mouse
+    binding = <ControlMask><Mod1Mask>3
+    directory = ~/docs
+    command = abiword
+    shell = no
+}}}
+
+And run the daemon:
+
+{{{
+$ xhotkeysd
+}}}
+
+= Startup =
+
+To launch xhotkeys at startup, configure your desktop environment (Gnome, KDE) sessions.

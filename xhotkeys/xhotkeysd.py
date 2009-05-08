@@ -10,13 +10,11 @@ Configuration file (similar to INI-files) should look like this:
         binding = <ControlMask><Mod1Mask>C
         command = /usr/bin/xcalc
         directory = ~
-        shell = no
 
     [abiword]
         binding = <ControlMask><Mod1Mask>Button2
         command = abiword ~/mydocs/readme.txt
         directory = ~/mydocs/
-        shell = yes
     
 And the daemon can be started from the shell this way:
 
@@ -39,16 +37,29 @@ import inspect
 
 # Third-party mdoules
 import Xlib.X 
-import configobj
 
 # Application modules
 from xhotkeys import misc
+from xhotkeys.hotkey import Hotkey
 import xhotkeys
 
 # Global values
 VERSION = "0.0.1" 
 CONFIGURATION_FILES = ["~/.xhotkeysrc", "/etc/xhotkeys.conf"]
 PIDFILE = "~/.xhotkeys.pid"
+
+modifiers_name = {
+    Xlib.X.ShiftMask: "Shift",
+    Xlib.X.LockMask: "CapsLock", 
+    Xlib.X.ControlMask: "Control",
+    Xlib.X.Mod1Mask: "Alt",
+    Xlib.X.Mod2Mask: "NumLock",
+    Xlib.X.Mod3Mask: "ScrollLock",
+    Xlib.X.Mod4Mask: "WinKey", 
+    Xlib.X.Mod5Mask: "AltGr",
+}
+
+modifiers_masks = dict((v, k) for (k, v) in modifiers_name.items())
 
 class XhotkeysServerReload(Exception):
     """Raised when the configuration must be reload."""
@@ -77,7 +88,7 @@ def on_sighup(signum, frame):
     logging.info("reload exception raised")
     raise XhotkeysServerReload
             
-def on_hotkey(command, shell=False, directory=None, **popen_kwargs):
+def on_hotkey(command, shell=True, directory=None, **popen_kwargs):
     """
     Called when a configured key binding is detected. Run a command
     with (an optional) shell and setting the current directory if necessary.
@@ -100,31 +111,33 @@ def set_signal_handlers(server, pidfile):
     signal.signal(signal.SIGTERM, terminate_callback)
     signal.signal(signal.SIGINT, terminate_callback)
 
-def configure_server(server, config):
+def configure_server(server, hotkeys):
     """Configure xhotkeys server from config object."""
-    for item, options in config.iteritems():
-        logging.debug("configuring: %s (%s)" % (item, options))
-        smodifiers, skey = re.search("(<.*>)(.*)$", options["binding"]).groups()
-        match = re.match("Button(\d+)$", skey)
+    for hotkey in hotkeys:
+        logging.debug("configuring: %s (%s)" % (hotkey.name, hotkey.get_attributes()))
+        if not hotkey.binding:
+            logging.warning("empty binding for hotkey: %s" % hotkey.name)
+            continue        
+        smodifiers, skey = re.search("(<.*>)(.*)$", hotkey.binding).groups()
+        match = re.match("button(\d+)$", skey.lower())
         if match:
             binding_type = "mouse"
             button = int(match.group(1))
         else:
             binding_type = "keyboard"
-            keysym = xhotkeys.get_keysym(skey) 
-        modifiers = re.findall("<(.*?)>", smodifiers)
-        mask = sum(getattr(Xlib.X, modifier) for modifier in modifiers)
+            if skey.startswith("#"):
+                keycode = int(skey[1:])
+            else:
+                keycode = xhotkeys.get_keycode(skey) 
+        modifiers = re.findall("<(.*?)>", smodifiers)        
+        mask = sum(modifiers_masks[modifier] for modifier in modifiers)
         
-        shell = (options["shell"].lower() in ("true", "yes", "on", "1"))
-        command = (options["command"] if shell else 
-            shlex.split(options["command"]))
-        directory = options["directory"]
-        args = [mask, on_hotkey, command, shell, directory]
-        if binding_type == "keyboard":
-            logging.info("grabbing key: %s/%s/%s" % (mask, command, shell))
-            server.add_key_grab(keysym, *args)
+        args = [mask, on_hotkey, hotkey.command, True, hotkey.directory]
+        if binding_type == "keyboard":            
+            logging.info("grabbing key: %s/%s/%s" % (mask, keycode, hotkey.command))
+            server.add_key_grab(keycode, *args)
         elif binding_type == "mouse":
-            logging.info("grabbing button: %s/%s/%s" % (mask, command, shell))
+            logging.info("grabbing button: %s/%s/%s" % (mask, button, hotkey.command))
             server.add_button_grab(button, *args)
             
 def start_server(get_config_callback, pidfile=None, ignore_mask=None):
@@ -140,7 +153,6 @@ def start_server(get_config_callback, pidfile=None, ignore_mask=None):
             "binding": "<ControlMask><Mod1Mask>C",
             "directory": "~",
             "command": "xcalc",
-            "shell": "1",
         }
     }
     
@@ -168,8 +180,8 @@ def get_config(configfile):
     if isinstance(configfile, basestring) and not os.path.isfile(configfile):
         logging.warning("configuration file not found: %s" % configfile)
     logging.info("load configuration: %s" % configfile)
-    config = configobj.ConfigObj(configfile)
-    return config
+    Hotkey.init(configfile)
+    return Hotkey.items()
 
 def write_pidfile(path):
     """Write a pidfile with current process PID."""
@@ -218,7 +230,7 @@ def main(args):
     # Get absolute path for the files as current directory is likely to change
     configuration_files = [os.path.expanduser(path) for path in 
         [options.cfile] + CONFIGURATION_FILES if path]
-    configfile = misc.first(configuration_files, os.path.isfile)
+    configfile = os.path.abspath(misc.first(configuration_files, os.path.isfile))
     if not configfile:
         args = ", ".join(configuration_files)
         logging.critical("configuration files not found: %s" % args)
