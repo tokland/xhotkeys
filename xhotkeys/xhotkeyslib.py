@@ -178,8 +178,8 @@ class XhotkeysServer:
                 continue
             mask = event.state & ~self.ignore_mask
             key = (event.type, event.detail, mask)
-            try:
-                callback, args = self.callbacks[key]
-                callback(*args)
-            except KeyError:
+            if key not in self.callbacks:
                 print "warning: undefined event received: %s" % list(key)
+                continue
+            callback, args = self.callbacks[key]
+            callback(*args)                

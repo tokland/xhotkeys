@@ -39,6 +39,10 @@ setup(
     data_files = [
         ('share/doc/xhotkeys/examples',
             ('examples/xhotkeys.conf',)),
+        ('share/xhotkeys/',
+            ('pics/xhotkeys.xpm',)),
+        ('shape/applications',
+            ('xhotkeys.desktop',)),
     ],
     classifiers = [
         'Development Status :: 3 - Alpha',

@@ -118,7 +118,7 @@ def configure_server(server, hotkeys):
         if not hotkey.binding:
             logging.warning("empty binding for hotkey: %s" % hotkey.name)
             continue        
-        smodifiers, skey = re.search("(<.*>)(.*)$", hotkey.binding).groups()
+        smodifiers, skey = re.search("(<.*>)?(.*)$", hotkey.binding).groups()
         match = re.match("button(\d+)$", skey.lower())
         if match:
             binding_type = "mouse"
@@ -128,8 +128,10 @@ def configure_server(server, hotkeys):
             if skey.startswith("#"):
                 keycode = int(skey[1:])
             else:
-                keycode = xhotkeys.get_keycode(skey) 
-        modifiers = re.findall("<(.*?)>", smodifiers)        
+                keycode = xhotkeys.get_keycode(skey)
+        if smodifiers: 
+            modifiers = re.findall("<(.*?)>", smodifiers)
+        else: modifiers = []        
         mask = sum(modifiers_masks[modifier] for modifier in modifiers)
         
         args = [mask, on_hotkey, hotkey.command, True, hotkey.directory]

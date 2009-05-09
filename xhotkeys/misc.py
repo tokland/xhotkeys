@@ -2,12 +2,9 @@
 """
 General-use functions and classes.
 """
-import os
 import sys
-import time
 import logging
 
-# Verbose levels
 VERBOSE_LEVELS = {
     0: logging.CRITICAL,
     1: logging.ERROR,
@@ -16,21 +13,11 @@ VERBOSE_LEVELS = {
     4: logging.DEBUG,
 }
 
-class Struct:
-    """Struct/record-like class."""
-    def __init__(self, name, **entries):
-        self._name = name
-        self.__dict__.update(entries)
-
-    def __repr__(self):
-        args = ('%s=%s' % (k, repr(v)) for (k, v) in vars(self).iteritems())
-        return 'Struct %s (%s)' % (self._name, ', '.join(args))
-
 def partial_function(callback, *pargs, **pkwargs):
     """Return a partial function to callback."""
     def _wrapper(*args, **kwargs):
-        kwargs.update(pkwargs)
-        return callback(*(args+pargs), **kwargs)
+        pkwargs.update(kwargs)
+        return callback(*(pargs+args), **pkwargs)
     return _wrapper
 
 def first(it, pred=None):
@@ -57,4 +44,14 @@ def set_verbose_level(verbose_level):
     See VERBOSE_LEVELS constant for allowed values."""
     nlevel = max(0, min(verbose_level, len(VERBOSE_LEVELS)-1))
     logging.basicConfig(level=VERBOSE_LEVELS[nlevel], stream=sys.stderr,  
-        format='%(levelname)s: %(message)s')        
+        format='%(levelname)s: %(message)s')
+                
+class Struct:
+    """Struct/record-like class."""
+    def __init__(self, name, **entries):
+        self._name = name
+        self.__dict__.update(entries)
+
+    def __repr__(self):
+        args = ('%s=%s' % (k, repr(v)) for (k, v) in vars(self).iteritems())
+        return 'Struct %s (%s)' % (self._name, ', '.join(args))                

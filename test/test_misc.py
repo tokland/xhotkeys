@@ -14,13 +14,14 @@ class XhotkeysMiscTest(unittest.TestCase):
 
     def test_partial_function(self):
         def function(a, b, c=0):
-            return a + b + c
-        function1 = misc.partial_function(function, 1)
-        self.assertEqual(3, function1(2))
-        self.assertEqual(8, function1(2, c=5))
+            return (a / b) + c
         
-        function2 = misc.partial_function(function, 1, c=2)
-        self.assertEqual(6, function2(3))
+        function1 = misc.partial_function(function, 10)
+        self.assertEqual(5, function1(2)) # (10 / 2) = 5
+        self.assertEqual(8, function1(2, c=3)) # (10 / 2) + 3 = 8
+        
+        function2 = misc.partial_function(function, 12, c=2)
+        self.assertEqual(5, function2(4))
 
     def test_first(self):
         lst = [1, 2, 3, 4]
