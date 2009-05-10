@@ -96,7 +96,7 @@ def on_hotkey(command, shell=True, directory=None, **popen_kwargs):
     logging.debug("on_hotkey: %s" % command)
     if directory:
         directory2 = os.path.expanduser(directory)
-        logging.info("setting directory: %s" % directory2)
+        logging.info("setting current directory: %s" % directory2)
         os.chdir(directory2)
     popen = subprocess.Popen(command, shell=shell, **popen_kwargs)
     logging.info("process started with pid %s: %s" % (popen.pid, command))

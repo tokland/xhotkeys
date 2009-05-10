@@ -41,7 +41,7 @@ setup(
             ('examples/xhotkeys.conf',)),
         ('share/xhotkeys/',
             ('pics/xhotkeys.xpm',)),
-        ('shape/applications',
+        ('share/applications',
             ('xhotkeys.desktop',)),
     ],
     classifiers = [

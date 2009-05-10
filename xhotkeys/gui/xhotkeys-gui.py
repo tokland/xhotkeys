@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import time
 import signal
 import logging
 import optparse
@@ -28,7 +29,7 @@ ERROR, INFO, DEBUG = range(3)
 import Xlib.X
 import Xlib.display
 
-# - TODO: Status widget (with xhotkeys pid and configfile)
+# - TODO: Tests
 
 ALLOWED_MASKS = [
     Xlib.X.ShiftMask, 
@@ -78,7 +79,7 @@ class HotkeyWindow(gtk.Window):
             if event.keyval == gtk.keysyms.Escape and not self.recording:
                 cancel_callback(None)
         self.connect("key-press-event", on_form_window_key_press_event)
-        self.set_title("Hotkey configuration")
+        self.set_title("Hotkey configuration: %s" % hotkey.name)
                             
     def get_hotkey_text(self, modifiers_keycodes, keycode=None):        
         names = misc.uniq(self.keycode2name[kc] for kc in modifiers_keycodes)
@@ -275,22 +276,22 @@ class HotkeyListWindow(gtk.Window):
         self.add(box)
         self.connect("destroy", lambda window: gtk.main_quit())
         hotkeys_list = hotkeys_list_box.object_list
-        edit_button = gtk.Button(stock=gtk.STOCK_EDIT)
-        edit_button.connect("clicked", self.on_edit__clicked, hotkeys_list)
-        hotkeys_list_box.actions_box.pack_start(edit_button, expand=False, fill=False)
-
-        delete_button = gtk.Button(stock=gtk.STOCK_DELETE)
-        delete_button.connect("clicked", self.on_delete__clicked, hotkeys_list)
-        hotkeys_list_box.actions_box.pack_start(delete_button, expand=False, fill=False)
-
-        add_button = gtk.Button(stock=gtk.STOCK_ADD)
-        add_button.connect("clicked", self.on_add__clicked, hotkeys_list)
-        hotkeys_list_box.actions_box.pack_start(add_button, expand=False, fill=False)
+        
+        def _button(stock, where, callback, *callback_args):
+            button = gtk.Button(stock=stock)
+            button.connect("clicked", callback, *callback_args)
+            pack = {
+                "start": hotkeys_list_box.actions_box.pack_start, 
+                "end": hotkeys_list_box.actions_box.pack_end,
+            }[where]
+            pack(button, expand=False, fill=False)
+            return button
+        
+        edit_button = _button(gtk.STOCK_EDIT, "start", self.on_edit__clicked, hotkeys_list)
+        delete_button = _button(gtk.STOCK_DELETE, "start", self.on_delete__clicked, hotkeys_list)
+        add_button = _button(gtk.STOCK_ADD, "start", self.on_add__clicked, hotkeys_list)
+        quit_button = _button(gtk.STOCK_QUIT, "end", self.on_quit__clicked)
         hotkeys_list_box.actions_box.set_spacing(5)
-
-        button = gtk.Button(stock=gtk.STOCK_QUIT)
-        button.connect("clicked", self.on_quit__clicked)
-        hotkeys_list_box.actions_box.pack_end(button, expand=False, fill=False)
 
         def on_window_key_press_event(window, event):
             if event.keyval == gtk.keysyms.Delete:
@@ -299,21 +300,37 @@ class HotkeyListWindow(gtk.Window):
 
         hotkeys_list.connect('selection-changed', self.on_hotkey_list__selected, 
             delete_button, edit_button)
-        hotkeys_list.connect('row-activated', self.on_hotkey_list__selection_changed, 
-            self)
+        hotkeys_list.connect('row-activated', self.on_hotkey_list__selection_changed)
+        
+        status = gtk.Statusbar()
+        self.status = status
+        box.pack_start(status, expand=False, fill=False)
+        pid = self.get_pid(pidfile)
+        if pid:
+            self.update_status("xhotkeys daemon is running (pid %d)" % pid)
+        else:
+            self.update_status("xhotkeys daemon is not running")
         self.set_icon(gtk.gdk.pixbuf_new_from_file(icon))
         self.set_title("Xhotkeys configuration")
-            
+
+    def update_status(self, text, level=0):
+        self.status.push(level, "%s: %s" % (int(time.time()), text))
+                    
     def on_save(self, hotkeys_list, hotkey, action):
         if action == "new":
             hotkeys_list.append(hotkey)
         self.reload_server(self.pidfile)
 
+    def get_pid(self, pidfile):
+        if os.path.isfile(pidfile):
+            return int(open(pidfile).read())
+    
     def reload_server(self, pidfile):
         if pidfile:
-            if os.path.isfile(pidfile):
-                pid = int(open(pidfile).read())
+            pid = self.get_pid(pidfile)
+            if pid:
                 os.kill(pid, signal.SIGHUP)
+                self.update_status("xhotkeys daemon reloaded (pid %s)" % pid)
             else:
                 logging.warning("pidfile not found: %s" % pidfile)
                     
@@ -321,7 +338,7 @@ class HotkeyListWindow(gtk.Window):
         for button in [edit_button, delete_button]:
             button.set_sensitive(bool(hotkey))    
        
-    def on_hotkey_list__selection_changed(self, hotkeys_list, hotkey, window):
+    def on_hotkey_list__selection_changed(self, hotkeys_list, hotkey):
         self.open_hotkey_window(hotkeys_list, hotkey)
 
     def on_edit__clicked(self, button, hotkeys_list):
