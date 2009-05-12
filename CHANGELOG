@@ -1,3 +1,9 @@
+xhotkeys (0.0.3) unstable; urgency=low
+
+  * GUI enhanced (mouse biding, status bar, daemon reloading)
+
+ -- Arnau Sanchez <pyarnau@gmail.com>  Sun, 10 May 2009 15:43:19 +0200
+
 xhotkeys (0.0.2) unstable; urgency=low
 
   * Add GUI (alpha-code) 

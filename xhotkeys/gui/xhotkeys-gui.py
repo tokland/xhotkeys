@@ -313,8 +313,9 @@ class HotkeyListWindow(gtk.Window):
         self.set_icon(gtk.gdk.pixbuf_new_from_file(icon))
         self.set_title("Xhotkeys configuration")
 
-    def update_status(self, text, level=0):
-        self.status.push(level, "%s: %s" % (int(time.time()), text))
+    def update_status(self, text, context_description="xhotkeys-gui"):
+        context_id = self.status.get_context_id(context_description)
+        self.status.push(context_id, "%s: %s" % (int(time.time()), text))
                     
     def on_save(self, hotkeys_list, hotkey, action):
         if action == "new":
@@ -362,8 +363,8 @@ class HotkeyListWindow(gtk.Window):
         hotkeys = hotkeys_list.get_selected_rows()
         if not hotkeys:
             return
-        warning = "Are you sure you want to delete these hotkey(s)?\n%s" % \
-            ", ".join(x.name for x in hotkeys)
+        warning = ("Are you sure you want to delete these hotkey(s)?\n%s" % 
+            ", ".join(x.name for x in hotkeys))
         response = yesno(warning, parent=self, default=gtk.RESPONSE_NO)        
         if response == gtk.RESPONSE_YES:
             for hotkey in hotkeys:
