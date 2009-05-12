@@ -1,0 +1,29 @@
+test_first (test_misc.XhotkeysMiscTest) ... ok
+test_partial_function (test_misc.XhotkeysMiscTest) ... ok
+test_struct (test_misc.XhotkeysMiscTest) ... ok
+test_get_keysym (test_xhotkeyslib.XhotkeysTest) ... ok
+test_get_mask_combinations (test_xhotkeyslib.XhotkeysTest) ... ok
+test_grab_button (test_xhotkeyslib.XhotkeysTest) ... ok
+test_grab_key (test_xhotkeyslib.XhotkeysTest) ... ok
+test_ungrab (test_xhotkeyslib.XhotkeysTest) ... ok
+test_add_button_grab (test_xhotkeyslib.XhotkeysServerTest) ... ok
+test_add_key_grab (test_xhotkeyslib.XhotkeysServerTest) ... ok
+test_clear_grabs (test_xhotkeyslib.XhotkeysServerTest) ... ok
+test_run (test_xhotkeyslib.XhotkeysServerTest) ... ok
+test_configure_server (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_get_config (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_get_on_terminate (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_main (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_main_keyboard_info (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_on_hotkey (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_on_sigchild (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_on_sighup (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_set_signal_handlers (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_show_keyboard_info (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_start_server (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+test_write_pidfile (test_xhotkeysd.XhotkeysDaemonTest) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.278s
+
+OK
