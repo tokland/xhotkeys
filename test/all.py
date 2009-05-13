@@ -4,7 +4,8 @@ class AllTestSuite(unittest.TestSuite):
     all_tests = [
         "test_misc",
         "test_xhotkeyslib",
-        "test_xhotkeysd",
+        "test_xhotkeys_server",
+        "test_gui_main",
     ]
     def __init__(self):
         unittest.TestSuite.__init__(self)

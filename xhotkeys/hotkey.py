@@ -52,17 +52,22 @@ class ConfigObjModel:
                 raise ValueError, "Attribute unknown: %s" % attr
             setattr(self, attr, value) 
         
-    def valid(self, params=None):
+    def valid(self, params=None, attribute=None):
         if not params:
             params = dict((attr, getattr(self, attr)) 
                 for attr in self.attributes.keys()+[self.name_attribute])
-        if not params["name"]:
-            return False
-        if self._name != params["name"] and \
-                params["name"] in self.__class__.config.sections:
-            return False
-        for key, value in params.iteritems():
-            if key == "name":
+        if not attribute or attribute == self.name_attribute:            
+            if not params[self.name_attribute]:
+                return False
+            if self._name != params[self.name_attribute] and \
+                    params[self.name_attribute] in self.__class__.config.sections:
+                return False
+            tocheck = [(k, v) for (k, v) in params.items() 
+                if k != self.name_attribute]
+        else:
+            tocheck = [(attribute, params[attribute])]            
+        for key, value in tocheck:
+            if key == self.name_attribute:
                 continue
             if not self.attributes[key].get("void", True):
                 if not value:

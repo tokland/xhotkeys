@@ -160,7 +160,9 @@ def start_server(get_config_callback, pidfile=None, ignore_mask=None):
     
     >>> start_server(lambda: config)
     """
-    write_pidfile(pidfile)
+    if not write_pidfile(pidfile):
+        logging.critical("xhotkeys server already running (see %s)" % pidfile)
+        return 2
     logging.info("starting xhotkeys server")
     if ignore_mask is None:
         ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask
@@ -185,10 +187,21 @@ def get_config(configfile):
     Hotkey.init(configfile)
     return Hotkey.items()
 
-def write_pidfile(path):
+def write_pidfile(pidfile):
     """Write a pidfile with current process PID."""
-    logging.debug("creating pidfile: %s" % path)
-    open(path, "w").write("%d\n" % os.getpid())
+    logging.debug("checking existence of pidfile: %s" % pidfile)
+    if os.path.isfile(pidfile):
+        try:
+            pid = int(open(pidfile).read())
+        except ValueError:
+            pid = None
+        if pid and os.path.exists("/proc/%s" % pid):
+            logging.debug("pidfile exists and pid %s is a running process" % pid)
+            return
+    logging.debug("creating pidfile: %s" % pidfile)
+    pid = os.getpid()
+    open(pidfile, "w").write("%d\n" % pid)
+    return pid
 
 def show_keyboard_info(ignore_mask, stream=None):
     """Show keyboard info (keys and available modifiers) to stream."""

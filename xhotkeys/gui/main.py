@@ -16,7 +16,7 @@ from kiwi.ui.dialogs import yesno
 
 # Application modules
 import xhotkeys
-from xhotkeys import xhotkeysd
+from xhotkeys import server as htserver
 from xhotkeys import misc
 from xhotkeys.gui import gtkext
 from xhotkeys.hotkey import Hotkey
@@ -50,6 +50,7 @@ class HotkeyWindow(gtk.Window):
 
     def __init__(self, action, hotkey, hotkeys_list, pidfile, on_save):
         gtk.Window.__init__(self)
+              
         self.hotkey = hotkey
         self.hotkeys_list = hotkeys_list
         self.pidfile = pidfile
@@ -61,12 +62,11 @@ class HotkeyWindow(gtk.Window):
         
         # Modifiers and keycode/keysyms mappings
         modifiers_name = dict((k, v) for (k, v) 
-            in xhotkeysd.modifiers_name.items() if k in ALLOWED_MASKS)
+            in htserver.modifiers_name.items() if k in ALLOWED_MASKS)
         self.keycode2name = dict((keycode, modifiers_name[mask]) for (keycode, mask) 
             in xhotkeys.get_keycode_to_modifier_mask_mapping(
             modifiers_name.keys()).iteritems())
         self.keysym2string = xhotkeys.get_keysym_to_string_mapping()
-
         
         # Create form window
         cancel_callback = self.on_hotkey_cancel__clicked
@@ -89,34 +89,36 @@ class HotkeyWindow(gtk.Window):
             text += self.keysym2string.get(keysym, "#%d" % keycode)
         return text
 
-    def start_recording(self, button, entry):        
-        button.set_sensitive(False)    
-        entry.set_sensitive(True)
+    def start_recording(self, entry, record_button, save_button):        
         self.recording = True    
+        record_button.set_sensitive(False)    
+        save_button.set_sensitive(False)
+        entry.set_sensitive(True)
         entry.grab_focus()
         entry.old_text = entry.get_text()
         entry.set_text("Grabbing...")
         entry.keycodes = []
 
-    def stop_recording(self, text, entry, button):
-        entry.set_text(text)
-        button.set_sensitive(True)    
-        entry.set_sensitive(False)
-        button.grab_focus()
+    def stop_recording(self, text, entry, record_button, save_button):
         self.recording = False    
+        entry.set_text(text)
+        record_button.set_sensitive(True)    
+        save_button.set_sensitive(True)
+        entry.set_sensitive(False)
+        record_button.grab_focus()
 
-    def on_binding_entry__button_press_event(self, entry, event, button):
+    def on_binding_entry__button_press_event(self, entry, event, button, save_button):
         if not entry.keycodes:
             return
         text = self.get_hotkey_text(entry.keycodes) + "Button%d" % event.button        
-        self.stop_recording(text, entry, button)
+        self.stop_recording(text, entry, button, save_button)
         entry.stop_emission("button-press-event")
                 
-    def on_binding_entry__key_press_event(self, entry, event, button):    
+    def on_binding_entry__key_press_event(self, entry, event, button, save_button):    
         keycode = event.hardware_keycode
         keysym = event.keyval
         if event.keyval == gtk.keysyms.Escape:
-            self.stop_recording(entry.old_text, entry, button)        
+            self.stop_recording(entry.old_text, entry, button, save_button)        
         elif keycode in self.keycode2name:
             if keycode not in entry.keycodes:
                 entry.keycodes.append(keycode)
@@ -125,7 +127,7 @@ class HotkeyWindow(gtk.Window):
         else:
             text = ("" if keysym == Xlib.XK.XK_BackSpace else
                 self.get_hotkey_text(entry.keycodes, keycode))
-            self.stop_recording(text, entry, button)
+            self.stop_recording(text, entry, button, save_button)
         entry.stop_emission("key-press-event")
 
     def on_binding_entry__key_release_event(self, entry, event):    
@@ -137,13 +139,14 @@ class HotkeyWindow(gtk.Window):
         entry.set_text(text)
         entry.stop_emission("key-release-event")
 
-    def on_binding_button__clicked(self, button, entry):
-        self.start_recording(button, entry)    
+    def on_binding_button__clicked(self, record_button, entry, save_button):
+        self.start_recording(entry, record_button, save_button)    
         entry.connect("key-press-event", self.on_binding_entry__key_press_event, 
-            button)
-        entry.connect("key-release-event", self.on_binding_entry__key_release_event)
-        entry.connect("button-press-event", self.on_binding_entry__button_press_event, button)
-
+            record_button, save_button)
+        entry.connect("key-release-event", 
+          self.on_binding_entry__key_release_event)
+        entry.connect("button-press-event", 
+          self.on_binding_entry__button_press_event, record_button, save_button)
 
     def hotkey_form(self, hotkey, hotkeys_list,  
             save_callback, cancel_callback, pidfile, action):    
@@ -204,15 +207,20 @@ class HotkeyWindow(gtk.Window):
                 abox.pack_start(options["action"], expand=False)
             if widget_class is gtk.Entry:
                 widget.connect("activate", on_save_button__clicked)
-            def on_form_widget__changed(entry):
+            def on_form_widget__changed(entry, name=name):
+                if name == "binding":
+                    return
                 params = get_params(self.form)
+                isvalid = hotkey.valid(params, name)
+                color = "white" if isvalid else "#FFBBAA"
+                entry.modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(color)) 
                 save_button.set_sensitive(hotkey.valid(params))
             widget.connect("changed", on_form_widget__changed)
             box.pack_start(abox)
             widgets[name] = widget
         widgets["name"].set_width_chars(40)
         binding_button.connect("clicked", self.on_binding_button__clicked, 
-            widgets["binding"])
+            widgets["binding"], save_button)
         browse_directory_button.connect("clicked", 
             self.on_browse_directory__clicked, widgets["directory"])
                         
@@ -236,7 +244,6 @@ class HotkeyWindow(gtk.Window):
     def on_hotkey_cancel__clicked(self, button):
         self.destroy()    
                 
-
     def on_browse_directory__clicked(self, button, entry):
         directory = os.path.expanduser(entry.get_text())
         if not os.path.isdir(directory):
@@ -256,9 +263,11 @@ class HotkeyListWindow(gtk.Window):
     
     Actions: Edit, Delete, Add and Exit.
     """
-    def __init__(self, configfile, pidfile, icon):
+    def __init__(self, configfile, pidfile, icon=None):
         self.configfile = configfile
         self.pidfile = pidfile
+        
+        self.widgets = {}
         
         gtk.Window.__init__(self)        
         columns = [
@@ -287,11 +296,22 @@ class HotkeyListWindow(gtk.Window):
             pack(button, expand=False, fill=False)
             return button
         
-        edit_button = _button(gtk.STOCK_EDIT, "start", self.on_edit__clicked, hotkeys_list)
-        delete_button = _button(gtk.STOCK_DELETE, "start", self.on_delete__clicked, hotkeys_list)
-        add_button = _button(gtk.STOCK_ADD, "start", self.on_add__clicked, hotkeys_list)
+        edit_button = _button(gtk.STOCK_EDIT, "start", 
+          self.on_edit__clicked, hotkeys_list)
+        delete_button = _button(gtk.STOCK_DELETE, "start", 
+          self.on_delete__clicked, hotkeys_list)
+        add_button = _button(gtk.STOCK_ADD, "start", 
+          self.on_add__clicked, hotkeys_list)
         quit_button = _button(gtk.STOCK_QUIT, "end", self.on_quit__clicked)
         hotkeys_list_box.actions_box.set_spacing(5)
+        
+        self.widgets.update({
+          "edit_button": edit_button,
+          "delete_button": delete_button,
+          "add_button": add_button,
+          "quit_button": quit_button,
+          "hotkeys_list": hotkeys_list,
+        })
 
         def on_window_key_press_event(window, event):
             if event.keyval == gtk.keysyms.Delete:
@@ -310,7 +330,8 @@ class HotkeyListWindow(gtk.Window):
             self.update_status("xhotkeys daemon is running (pid %d)" % pid)
         else:
             self.update_status("xhotkeys daemon is not running")
-        self.set_icon(gtk.gdk.pixbuf_new_from_file(icon))
+        if icon:
+          self.set_icon(gtk.gdk.pixbuf_new_from_file(icon))
         self.set_title("Xhotkeys configuration")
 
     def update_status(self, text, context_description="xhotkeys-gui"):
@@ -336,8 +357,9 @@ class HotkeyListWindow(gtk.Window):
                 logging.warning("pidfile not found: %s" % pidfile)
                     
     def on_hotkey_list__selected(self, hotkeys_list, hotkey, delete_button, edit_button):
-        for button in [edit_button, delete_button]:
-            button.set_sensitive(bool(hotkey))    
+        hotkeys = hotkeys_list.get_selected_rows()
+        edit_button.set_sensitive(len(hotkeys) == 1)
+        delete_button.set_sensitive(bool(xhotkeys))
        
     def on_hotkey_list__selection_changed(self, hotkeys_list, hotkey):
         self.open_hotkey_window(hotkeys_list, hotkey)
