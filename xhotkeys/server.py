@@ -98,8 +98,12 @@ def on_hotkey(command, shell=True, directory=None, **popen_kwargs):
         directory2 = os.path.expanduser(directory)
         logging.info("setting current directory: %s" % directory2)
         os.chdir(directory2)
-    popen = subprocess.Popen(command, shell=shell, **popen_kwargs)
-    logging.info("process started with pid %s: %s" % (popen.pid, command))
+    try:
+        popen = subprocess.Popen(command, shell=shell, **popen_kwargs)
+        logging.info("process started with pid %s: %s" % (popen.pid, command))
+    except OSError, details:
+        logging.error("error on subprocess.Popen: %s" % details)
+        return
     return popen
     
 def set_signal_handlers(server, pidfile):
