@@ -1,3 +1,10 @@
+xhotkeys (0.1) unstable; urgency=low
+
+  * GUI: fields validation for hotkey form
+  * server: exceptions handler improved
+
+ --  <pyarnau@gmail.com>  Thu, 16 Jul 2009 19:48:52 +0200
+
 xhotkeys (0.0.3) unstable; urgency=low
 
   * GUI enhanced (mouse biding, status bar, daemon reloading)
