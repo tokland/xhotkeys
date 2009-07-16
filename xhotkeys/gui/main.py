@@ -114,7 +114,7 @@ class HotkeyWindow(gtk.Window):
         self.stop_recording(text, entry, button, save_button)
         entry.stop_emission("button-press-event")
                 
-    def on_binding_entry__key_press_event(self, entry, event, button, save_button):    
+    def on_binding_entry__key_press_event(self, entry, event, button, save_button):
         keycode = event.hardware_keycode
         keysym = event.keyval
         if event.keyval == gtk.keysyms.Escape:
@@ -212,10 +212,11 @@ class HotkeyWindow(gtk.Window):
                     return
                 params = get_params(self.form)
                 isvalid = hotkey.valid(params, name)
-                color = "white" if isvalid else "#FFBBAA"
+                color = "white" if isvalid else "#FFDDBB"
                 entry.modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(color)) 
                 save_button.set_sensitive(hotkey.valid(params))
             widget.connect("changed", on_form_widget__changed)
+            widget.emit("changed")
             box.pack_start(abox)
             widgets[name] = widget
         widgets["name"].set_width_chars(40)
