@@ -56,7 +56,9 @@ class ConfigObjModel:
         if not params:
             params = dict((attr, getattr(self, attr)) 
                 for attr in self.attributes.keys()+[self.name_attribute])
-        if not attribute or attribute == self.name_attribute:            
+        if attribute == self.name_attribute:
+            return bool(params[self.name_attribute])            
+        if not attribute:
             if not params[self.name_attribute]:
                 return False
             if self._name != params[self.name_attribute] and \
@@ -98,5 +100,4 @@ class Hotkey(ConfigObjModel):
         "command": dict(type="string", void=False),
         "binding": dict(type="string"),
         "directory": dict(type="string", default="~"),
-    } 
-
+    }
