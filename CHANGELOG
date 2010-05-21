@@ -1,3 +1,9 @@
+xhotkeys (0.1.1) unstable; urgency=low
+
+  * Minor fixes
+
+ --  <tokland@gmail.com>  Fri, 21 May 2010 10:01:44 +0200
+
 xhotkeys (0.1) unstable; urgency=low
 
   * GUI: fields validation for hotkey form

@@ -44,7 +44,7 @@ from xhotkeys.hotkey import Hotkey
 import xhotkeys
 
 # Global values
-VERSION = "0.1"
+VERSION = "0.1.1"
 CONFIGURATION_FILES = ["~/.xhotkeysrc", "/etc/xhotkeys.conf"]
 PIDFILE = "~/.xhotkeys.pid"
 
