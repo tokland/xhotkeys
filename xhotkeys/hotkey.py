@@ -56,14 +56,16 @@ class ConfigObjModel:
         if not params:
             params = dict((attr, getattr(self, attr)) 
                 for attr in self.attributes.keys()+[self.name_attribute])
-        if attribute == self.name_attribute:
-            return bool(params[self.name_attribute])            
-        if not attribute:
+        #if attribute == self.name_attribute:
+        #    return bool(params[self.name_attribute])            
+        if not attribute or attribute == self.name_attribute:
             if not params[self.name_attribute]:
                 return False
             if self._name != params[self.name_attribute] and \
                     params[self.name_attribute] in self.__class__.config.sections:
                 return False
+            if attribute == self.name_attribute:
+                return True
             tocheck = [(k, v) for (k, v) in params.items() 
                 if k != self.name_attribute]
         else:

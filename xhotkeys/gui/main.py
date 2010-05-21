@@ -244,14 +244,44 @@ class HotkeyWindow(gtk.Window):
 
     def on_hotkey_cancel__clicked(self, button):
         self.destroy()    
-                
+
+class EasyFileChooserDialog(gtk.FileChooserDialog):
+    
+    def __init__(self, action_info, filename=None, filtersdef=None):
+        """Create and return a GTK FileChooserDialog with basic support:
+
+        - Escape closes the window
+        - Accept/close buttons
+        - Easy to use filters"""
+        abutton, gtkaction, title = action_info
+        buttons = ((gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT) + 
+            (abutton, gtk.RESPONSE_ACCEPT))
+        gtk.FileChooserDialog.__init__(self, title=title, buttons=buttons,
+            action=gtkaction)
+        self.connect("key-press-event", self._on_key)
+        self.set_filename(filename)
+        for name, mime_types, patterns in (filtersdef or []):
+            filt = gtk.FileFilter()
+            filt.set_name(name)
+            for mt in mime_types:
+                filt.add_mime_type(mt)
+            for pattern in patterns:
+                filt.add_patern(pattern)    
+            self.add_filter(filt)
+
+    def _on_key(self, widget, event):
+        if event.keyval in [gtk.keysyms.Return]:
+            self.emit("response", gtk.RESPONSE_ACCEPT)
+        elif event.keyval in [gtk.keysyms.Escape]:
+            self.emit("response", gtk.RESPONSE_REJECT)
+                        
     def on_browse_directory__clicked(self, button, entry):
         directory = os.path.expanduser(entry.get_text())
         if not os.path.isdir(directory):
             directory = os.path.expanduser("~")                         
         action_info = (gtk.STOCK_OPEN, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, 
             "Select directory where the command will start")            
-        dialog = gtkext.EasyFileChooserDialog(action_info, directory)
+        dialog = EasyFileChooserDialog(action_info, directory)
         if dialog.run() == gtk.RESPONSE_ACCEPT:
             directory = dialog.get_filename()
             entry.set_text(directory)

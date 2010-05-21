@@ -59,7 +59,7 @@ modifiers_name = {
     Xlib.X.Mod5Mask: "AltGr",
 }
 
-modifiers_masks = dict((v, k) for (k, v) in modifiers_name.items())
+modifiers_masks = dict((v.lower(), k) for (k, v) in modifiers_name.items())
 
 class XhotkeysServerReload(Exception):
     """Raised when the configuration must be reload."""
@@ -136,7 +136,7 @@ def configure_server(server, hotkeys):
         if smodifiers: 
             modifiers = re.findall("<(.*?)>", smodifiers)
         else: modifiers = []        
-        mask = sum(modifiers_masks[modifier] for modifier in modifiers)
+        mask = sum(modifiers_masks[modifier.lower()] for modifier in modifiers)
         
         args = [mask, on_hotkey, hotkey.command, True, hotkey.directory]
         if binding_type == "keyboard":            
