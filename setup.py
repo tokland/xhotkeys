@@ -19,9 +19,11 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>
 
 from distutils.core import setup
+from xhotkeys import VERSION
 
 setup(
     name="xhotkeys",
+    version=VERSION,
     description="Run command on hotkeys (keyboard & mouse) for X-Windows",
     author="Arnau Sanchez",
     author_email="tokland@gmail.com",

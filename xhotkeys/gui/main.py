@@ -29,8 +29,6 @@ ERROR, INFO, DEBUG = range(3)
 import Xlib.X
 import Xlib.display
 
-# - TODO: Tests
-
 ALLOWED_MASKS = [
     Xlib.X.ShiftMask, 
     Xlib.X.ControlMask, 
@@ -41,6 +39,29 @@ ALLOWED_MASKS = [
 
 def get_params(form):
     return dict((attr, func()) for attr, func in form.iteritems())
+
+class EasyFileChooserDialog(gtk.FileChooserDialog):    
+    def __init__(self, action_info, filename=None, filtersdef=None):
+        """Create and return a GTK FileChooserDialog with basic support:
+
+        - Escape closes the window
+        - Accept/close buttons
+        - Easy to use filters"""
+        abutton, gtkaction, title = action_info
+        buttons = ((gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT) + 
+            (abutton, gtk.RESPONSE_ACCEPT))
+        gtk.FileChooserDialog.__init__(self, title=title, buttons=buttons,
+            action=gtkaction)
+        self.connect("key-press-event", self._on_key)
+        self.set_filename(filename)
+        for name, mime_types, patterns in (filtersdef or []):
+            filt = gtk.FileFilter()
+            filt.set_name(name)
+            for mt in mime_types:
+                filt.add_mime_type(mt)
+            for pattern in patterns:
+                filt.add_patern(pattern)    
+            self.add_filter(filt)
 
 class HotkeyWindow(gtk.Window):
     """Window with hotkey form: name, command, binding, directory.
@@ -244,30 +265,6 @@ class HotkeyWindow(gtk.Window):
 
     def on_hotkey_cancel__clicked(self, button):
         self.destroy()    
-
-class EasyFileChooserDialog(gtk.FileChooserDialog):
-    
-    def __init__(self, action_info, filename=None, filtersdef=None):
-        """Create and return a GTK FileChooserDialog with basic support:
-
-        - Escape closes the window
-        - Accept/close buttons
-        - Easy to use filters"""
-        abutton, gtkaction, title = action_info
-        buttons = ((gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT) + 
-            (abutton, gtk.RESPONSE_ACCEPT))
-        gtk.FileChooserDialog.__init__(self, title=title, buttons=buttons,
-            action=gtkaction)
-        self.connect("key-press-event", self._on_key)
-        self.set_filename(filename)
-        for name, mime_types, patterns in (filtersdef or []):
-            filt = gtk.FileFilter()
-            filt.set_name(name)
-            for mt in mime_types:
-                filt.add_mime_type(mt)
-            for pattern in patterns:
-                filt.add_patern(pattern)    
-            self.add_filter(filt)
 
     def _on_key(self, widget, event):
         if event.keyval in [gtk.keysyms.Return]:
