@@ -65,7 +65,7 @@ class XhotkeysServerReload(Exception):
     """Raised when the configuration must be reload."""
     pass
         
-def on_terminate(signum, frame, server, pidfile):
+def on_terminate(server, pidfile, signum, frame):
     """Called when the process is asked to terminate."""
     logging.debug("on_terminate: signum=%s, frame=%s" % (signum, frame))
     if pidfile and os.path.isfile(pidfile):
