@@ -293,8 +293,7 @@ class HotkeyListWindow(gtk.Window):
     """
     def __init__(self, configfile, pidfile, icon=None):
         self.configfile = configfile
-        self.pidfile = pidfile
-        
+        self.pidfile = pidfile        
         self.widgets = {}
         
         gtk.Window.__init__(self)        
@@ -359,7 +358,7 @@ class HotkeyListWindow(gtk.Window):
         else:
             self.update_status("xhotkeys daemon is not running")
         if icon:
-          self.set_icon(gtk.gdk.pixbuf_new_from_file(icon))
+          self.set_icon_from_file(icon)
         self.set_title("Xhotkeys configuration")
 
     def update_status(self, text, context_description="xhotkeys-gui"):
@@ -424,7 +423,13 @@ class HotkeyListWindow(gtk.Window):
 
     def on_quit__clicked(self, button):
         gtk.main_quit()
+   
            
+def first(it, pred=bool):
+    for x in it:
+        if pred(x):
+          return x       
+                 
 ###
                  
 def main(args):
@@ -446,8 +451,11 @@ def main(args):
     # Get absolute path for the files as current directory is likely to change
     configfile = os.path.expanduser(options.cfile or CONFIGURATION_FILE)
     pidfile = os.path.abspath(os.path.expanduser(options.pidfile or PIDFILE))
-    directory = ("/usr/share/xhotkeys" if __file__.startswith("/") else "pics")
-    icon = os.path.join(directory, "xhotkeys.xpm")
+    directories = ["/usr/local/share/xhotkeys", "/usr/share/xhotkeys"]
+    if os.path.basename(__file__) == "main.py": # development 
+        directories.insert(0, "pics")
+    directory = first(d for d in directories if os.path.isdir(d))
+    icon = (os.path.join(directory, "xhotkeys.xpm") if directory else None)
     window = HotkeyListWindow(configfile, pidfile, icon)    
     window.show_all()
     window.resize(700, 300)

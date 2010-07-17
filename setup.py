@@ -35,7 +35,7 @@ setup(
     scripts=[
 		"bin/xhotkeysd",
 		"bin/xhotkeys-gui",
-	],
+    ],
     license="GNU Public License v3.0",
     long_description=" ".join(__doc__.strip().splitlines()),
     data_files = [
