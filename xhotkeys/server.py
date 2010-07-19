@@ -31,17 +31,18 @@ import sys
 import shlex
 import signal
 import logging
+import inspect
 import optparse
 import subprocess
-import inspect
 
 # Third-party mdoules
-import Xlib.X 
+import Xlib
+from Xlib import X 
 
 # Application modules
+import xhotkeys
 from xhotkeys import misc
 from xhotkeys.hotkey import Hotkey
-import xhotkeys
 
 # Global values
 VERSION = "0.1.2"
@@ -49,14 +50,14 @@ CONFIGURATION_FILES = ["~/.xhotkeysrc", "/etc/xhotkeys.conf"]
 PIDFILE = "~/.xhotkeys.pid"
 
 modifiers_name = {
-    Xlib.X.ShiftMask: "Shift",
-    Xlib.X.LockMask: "CapsLock", 
-    Xlib.X.ControlMask: "Control",
-    Xlib.X.Mod1Mask: "Alt",
-    Xlib.X.Mod2Mask: "NumLock",
-    Xlib.X.Mod3Mask: "ScrollLock",
-    Xlib.X.Mod4Mask: "WinKey", 
-    Xlib.X.Mod5Mask: "AltGr",
+    X.ShiftMask: "Shift",
+    X.LockMask: "CapsLock", 
+    X.ControlMask: "Control",
+    X.Mod1Mask: "Alt",
+    X.Mod2Mask: "NumLock",
+    X.Mod3Mask: "ScrollLock",
+    X.Mod4Mask: "WinKey", 
+    X.Mod5Mask: "AltGr",
 }
 
 modifiers_masks = dict((v.lower(), k) for (k, v) in modifiers_name.items())
@@ -103,8 +104,8 @@ def on_hotkey(command, shell=True, directory=None, **popen_kwargs):
         logging.info("process started with pid %s: %s" % (popen.pid, command))
     except OSError, details:
         logging.error("error on subprocess.Popen: %s" % details)
-        return
-    return popen
+    else:
+        return popen
     
 def set_signal_handlers(server, pidfile):
     """Set signal handlers."""
@@ -135,7 +136,8 @@ def configure_server(server, hotkeys):
                 keycode = xhotkeys.get_keycode(skey)
         if smodifiers: 
             modifiers = re.findall("<(.*?)>", smodifiers)
-        else: modifiers = []        
+        else: 
+            modifiers = []        
         mask = sum(modifiers_masks[modifier.lower()] for modifier in modifiers)
         
         args = [mask, on_hotkey, hotkey.command, True, hotkey.directory]
@@ -169,7 +171,7 @@ def start_server(get_config_callback, pidfile=None, ignore_mask=None):
         return 2
     logging.info("starting xhotkeys server")
     if ignore_mask is None:
-        ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask
+        ignore_mask = X.LockMask | X.Mod2Mask | X.Mod5Mask
     logging.debug("ignore mask value: %s" % ignore_mask)
     server = xhotkeys.XhotkeysServer(ignore_mask)
     set_signal_handlers(server, pidfile)
@@ -211,15 +213,13 @@ def show_keyboard_info(ignore_mask, stream=None):
     """Show keyboard info (keys and available modifiers) to stream."""
     if stream is None:
         stream = sys.stdout
-    keys = [re.sub("^XK_", "", k) for (k, v) in inspect.getmembers(Xlib.XK) 
-        if re.match("^XK_", k)]
+    xk_keys = inspect.getmembers(Xlib.XK)
+    keys = [re.sub("^XK_", "", k) for (k, v) in xk_keys if re.match("^XK_", k)]
     modifiers = ["ShiftMask", "LockMask", "ControlMask", "Mod1Mask", 
-        "Mod2Mask", "Mod3Mask", "Mod4Mask", "Mod5Mask"]
-    modifiers2 = [mod for mod in modifiers 
-        if getattr(Xlib.X, mod) & ~ignore_mask]
-    stream.write("Keyboard info:\n\n")
-    stream.write("Available key symbols: %s\n\n" % ", ".join(keys))
-    stream.write("Available key modifiers: %s\n\n" % ", ".join(modifiers2)) 
+        "Mod2Mask", "Mod3Mask", "Mod4Mask", "Mod5Mask"]        
+    modifiers2 = [name for (value, name) in modifiers_name.items() if value & ~ignore_mask]
+    stream.write("Keys: %s\n" % ", ".join(keys))
+    stream.write("Modifiers: %s\n" % ", ".join(modifiers2)) 
                      
 def main(args):
     """Parse arguments and start a xhotkeys server reading a given 
@@ -235,28 +235,27 @@ def main(args):
     parser.add_option('-p', '--pid-file', dest='pidfile', default=None, 
         metavar='FILE', type='string', help='Alternative pidfile')
     parser.add_option('-i', '--key-info', dest='keyinfo', default=False, 
-        action='store_true', help='Show keyboard info')
-                        
+        action='store_true', help='Show keyboard info')                        
     options, args = parser.parse_args(args)
+    
     misc.verbose_level = options.verbose_level
-    ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask        
+    ignore_mask = X.LockMask | X.Mod2Mask | X.Mod3Mask | X.Mod5Mask        
     misc.set_verbose_level(options.verbose_level) 
     
     if options.keyinfo:
         show_keyboard_info(ignore_mask)
-        return
-        
+        return    
     # Get absolute path for the files as current directory is likely to change
     configuration_files = [os.path.expanduser(path) for path in 
-        [options.cfile] + CONFIGURATION_FILES if path]
+        ([options.cfile] + CONFIGURATION_FILES) if path]
     configfile = os.path.abspath(misc.first(configuration_files, os.path.isfile))
     if not configfile:
         args = ", ".join(configuration_files)
         logging.critical("configuration files not found: %s" % args)
         return 1
     pidfile = os.path.abspath(os.path.expanduser(options.pidfile or PIDFILE))
-    return start_server(misc.partial_function(get_config, configfile), 
-        pidfile, ignore_mask)
+    get_config_callback = misc.partial_function(get_config, configfile) 
+    return start_server(get_config_callback, pidfile, ignore_mask)
         
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
