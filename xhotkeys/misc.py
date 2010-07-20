@@ -45,7 +45,11 @@ def set_verbose_level(verbose_level):
     nlevel = max(0, min(verbose_level, len(VERBOSE_LEVELS)-1))
     logging.basicConfig(level=VERBOSE_LEVELS[nlevel], stream=sys.stderr,  
         format='%(levelname)s: %(message)s')
-                
+
+def compact(it, pred=bool):
+    """Filter elements in iterable that do not match predicate."""
+    return filter(pred, it)
+                      
 class Struct:
     """Struct/record-like class."""
     def __init__(self, name, **entries):

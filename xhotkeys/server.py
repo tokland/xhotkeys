@@ -28,6 +28,7 @@ Pidfile is stored at ~/.xhotkeys.pid by default.
 import os
 import re
 import sys
+import time
 import shlex
 import signal
 import logging
@@ -88,13 +89,42 @@ def on_sighup(signum, frame):
     logging.debug("on_sighup: signum=%s, frame=%s" % (signum, frame))
     logging.info("reload exception raised")
     raise XhotkeysServerReload
-            
-def on_hotkey(command, shell=True, directory=None, **popen_kwargs):
+   
+def on_hotkey(state, dcombinations, combination):
     """
-    Called when a configured key binding is detected. Run a command
-    with (an optional) shell and setting the current directory if necessary.
-    """    
-    logging.debug("on_hotkey: %s" % command)
+    Callback run with a combination is detected.
+    
+    It searches configured combinations to determine which hotkeys is refering.
+    """  
+    logging.debug("combination: %s" % repr(combination))
+    if state.timeout is not None and time.time() > state.timeout:
+        logging.debug("combinations expired: %s" % repr(state.current_combination))
+        state.current_combination = []
+        logging.debug("start new combination")
+    state.current_combination.append(combination)
+    hotkeys = [(hotkey0, len(sequences) == len(state.current_combination)) 
+        for (hotkey0, sequences) in dcombinations.iteritems() 
+        if sequences[:len(state.current_combination)] == state.current_combination]
+    if len(hotkeys) > 1:
+        logging.debug("matching hotkeys: %s" % ", ".join(hk.name for (hk, f) in hotkeys))
+        state.timeout = time.time() + 2.0
+    elif len(hotkeys) == 1:
+        hotkey, finished = hotkeys[0]
+        if finished:
+            run_command(hotkey.command, directory=hotkey.directory)
+            state.current_combination = []
+            state.timeout = None
+        else:
+            logging.debug("matching partial hotkey: %s" % hotkey)
+            state.timeout = time.time() + 2.0
+    else:
+        logging.debug("no combination found for sequence: %s" % state.current_combination)
+        state.current_combination = []
+        state.timeout = None
+
+def run_command(command, shell=True, directory=None, **popen_kwargs):
+    """Run command"""    
+    logging.debug("run_command: %s" % command)
     if directory:
         directory2 = os.path.expanduser(directory)
         logging.info("setting current directory: %s" % directory2)
@@ -118,35 +148,47 @@ def set_signal_handlers(server, pidfile):
 
 def configure_server(server, hotkeys):
     """Configure xhotkeys server from config object."""
-    for hotkey in hotkeys:
+    def get_combination_from_hotkey(hotkey):
         logging.debug("configuring: %s (%s)" % (hotkey.name, hotkey.get_attributes()))
         if not hotkey.binding:
             logging.warning("empty binding for hotkey: %s" % hotkey.name)
-            continue        
-        smodifiers, skey = re.search("(<.*>)?(.*)$", hotkey.binding).groups()
-        match = re.match("button(\d+)$", skey.lower())
-        if match:
-            binding_type = "mouse"
-            button = int(match.group(1))
-        else:
-            binding_type = "keyboard"
-            if skey.startswith("#"):
-                keycode = int(skey[1:])
-            else:
-                keycode = xhotkeys.get_keycode(skey)
-        if smodifiers: 
-            modifiers = re.findall("<(.*?)>", smodifiers)
-        else: 
-            modifiers = []        
-        mask = sum(modifiers_masks[modifier.lower()] for modifier in modifiers)
-        
-        args = [mask, on_hotkey, hotkey.command, True, hotkey.directory]
-        if binding_type == "keyboard":            
-            logging.info("grabbing key: %s/%s/%s" % (mask, keycode, hotkey.command))
-            server.add_key_grab(keycode, *args)
+            return        
+        smodifiers, string_keys = re.search("(<.*>)?(.*)$", hotkey.binding).groups()
+        combinations = []
+        for string_key in string_keys.split("+"):
+          match = re.match("button(\d+)$", string_key.lower())
+          if match:
+              binding_type = "mouse"
+              button = int(match.group(1))
+          else:
+              binding_type = "keyboard"
+              if string_key.startswith("#"):
+                  keycode = int(string_key[1:])
+              else:
+                  keycode = xhotkeys.get_keycode(string_key)
+          if smodifiers: 
+              modifiers = re.findall("<(.*?)>", smodifiers)
+          else: 
+              modifiers = []        
+          mask = sum(modifiers_masks[modifier.lower()] for modifier in modifiers)
+          combination = (binding_type, mask, keycode)
+          combinations.append(combination)
+        return (hotkey, combinations)
+                
+    dcombinations = dict(misc.compact(map(get_combination_from_hotkey, hotkeys)))
+    state = misc.Struct("combination-state", current_combination=[], timeout=None)
+    unique_combinations = misc.uniq(combination 
+        for (hotkey, combinations) in dcombinations.iteritems() 
+        for combination in combinations)
+    for combination in unique_combinations:        
+        binding_type, mask, keycode = combination
+        callback = misc.partial_function(on_hotkey, state, dcombinations, combination)          
+        if binding_type == "keyboard":
+            logging.info("grabbing key: %s/%s" % (mask, keycode))
+            server.add_key_grab(keycode, mask, callback)
         elif binding_type == "mouse":
-            logging.info("grabbing button: %s/%s/%s" % (mask, button, hotkey.command))
-            server.add_button_grab(button, *args)
+            logging.info("grabbing mouse button: %s/%s" % (mask, button))
+            server.add_button_grab(button, mask, callback)
             
 def start_server(get_config_callback, pidfile=None, ignore_mask=None):
     """
