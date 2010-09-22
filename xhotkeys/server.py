@@ -47,7 +47,7 @@ from xhotkeys.hotkey import Hotkey
 
 # Global values
 VERSION = "0.1.2"
-CONFIGURATION_FILES = ["~/.xhotkeysrc", "/etc/xhotkeys.conf"]
+CONFIGURATION_FILE = "~/.xhotkeysrc"
 PIDFILE = "~/.xhotkeys.pid"
 
 modifiers_name = {
@@ -288,13 +288,7 @@ def main(args):
         show_keyboard_info(ignore_mask)
         return    
     # Get absolute path for the files as current directory is likely to change
-    configuration_files = [os.path.expanduser(path) for path in 
-        ([options.cfile] + CONFIGURATION_FILES) if path]
-    configfile = os.path.abspath(misc.first(configuration_files, os.path.isfile))
-    if not configfile:
-        args = ", ".join(configuration_files)
-        logging.critical("configuration files not found: %s" % args)
-        return 1
+    configfile = os.path.abspath(options.cfile or CONFIGURATION_FILE)
     pidfile = os.path.abspath(os.path.expanduser(options.pidfile or PIDFILE))
     get_config_callback = misc.partial_function(get_config, configfile) 
     return start_server(get_config_callback, pidfile, ignore_mask)
