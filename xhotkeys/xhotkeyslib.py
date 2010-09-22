@@ -37,11 +37,7 @@ MODIFIERS_MASK = [
 ]
 
 def get_keysym(string):
-    """Return keysymbol from key string.
-     
-    >>> get_keysym("Cancel")
-    Xlib.XK.XK_Cancel
-    """
+    """Return key-symbol from key-string: get_keysym("Cancel") -> Xlib.XK.XK_Cancel."""
     return getattr(Xlib.XK, "XK_" + string)
 
 def get_keycode(string, display=None):
@@ -68,7 +64,7 @@ def get_mask_combinations(mask):
     return [x for x in xrange(mask+1) if not (x & ~mask)]
                     
 def ungrab(display, root):
-    """Ungrab all keycoard bindings"""
+    """Ungrab all keyboard bindings"""
     display.flush()
     root.ungrab_key(Xlib.X.AnyKey, Xlib.X.AnyModifier)
     root.ungrab_button(Xlib.X.AnyButton, Xlib.X.AnyModifier)
@@ -120,14 +116,14 @@ class XhotkeysServer:
     Xlib.X.ControlMask: Control
     Xlib.X.Mod1Mask: Alt
     Xlib.X.Mod2Mask: Num Lock
-    Xlib.X.Mod3Mask: (normally unused)
-    Xlib.X.Mod4Mask:,Window$ Key
+    Xlib.X.Mod3Mask: (unused)
+    Xlib.X.Mod4Mask: Window$ Key
     Xlib.X.Mod5Mask: Scroll Lock
     
     >>> ignore_mask = Xlib.X.LockMask | Xlib.X.Mod2Mask | Xlib.X.Mod5Mask
     >>> server = xhotkeys.XhotkeysServer(ignore_mask)
-    >>> server.add_key_grab(Xlib.XK.XK_1, Xlib.X.ControlMask, callback, 1) 
-    >>> server.add_button_grab(1, Xlib.X.ControlMask | Xlib.X.Mod1Mask, callback, 3)
+    >>> server.add_key_grab(Xlib.XK.XK_1, Xlib.X.ControlMask, callback, "some arg") 
+    >>> server.add_button_grab(1, Xlib.X.ControlMask | Xlib.X.Mod1Mask, callback)
     >>> server.run() 
     """
 
@@ -182,4 +178,4 @@ class XhotkeysServer:
                 print "warning: undefined event received: %s" % list(key)
                 continue
             callback, args = self.callbacks[key]
-            callback(*args)                
+            callback(*args)

@@ -46,7 +46,7 @@ from xhotkeys import misc
 from xhotkeys.hotkey import Hotkey
 
 # Global values
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 CONFIGURATION_FILE = "~/.xhotkeysrc"
 PIDFILE = "~/.xhotkeys.pid"
 

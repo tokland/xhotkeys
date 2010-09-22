@@ -3,6 +3,11 @@
 
 Xhotkeys provides a simple and easily configurable hotkey launcher for the X-Window System, binding keys and mouse buttons to configurable commands. It should work on all desktops (Gnome, KDE, Xfce, ...) available for the UNIX-like operating systems (GNU/Linux, BSD, ...). 
 
+= Dependencies =
+
+ * [http://www.python.org Python] (version >= 2.5)
+ * [http://www.async.com.br/projects/kiwi/ Kiwi].
+
 = Install =
 
 {{{
@@ -11,7 +16,7 @@ $ sudo python setup.py install
 
 = Manual configuration =
 
-Example of configuration file: $HOME/.xhotkeysrc:
+Example of configuration file (/home/youruser/.xhotkeysrc):
 
 {{{
 [calculator]
@@ -25,17 +30,18 @@ Example of configuration file: $HOME/.xhotkeysrc:
     command = abiword
 }}}
 
-Allowed modifiers: Control, Alt, Shift, !WinKey, !AltGr
+Allowed modifiers: _Control_, _Alt_, _Shift_, _!WinKey_, _!AltGr_
+
 = GUI configuration =
 
 {{{
 $ xhotkeys-gui
 }}}
 
-= Starting the daemon =
+= Start the daemon =
 
 {{{
 $ xhotkeysd
 }}}
 
-To launch xhotkeysd at startup, configure the sessions of you desktop environment.
+To launch _xhotkeysd_ on X boot, configure the sessions of you desktop environment.
