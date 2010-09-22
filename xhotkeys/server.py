@@ -288,7 +288,7 @@ def main(args):
         show_keyboard_info(ignore_mask)
         return    
     # Get absolute path for the files as current directory is likely to change
-    configfile = os.path.abspath(options.cfile or CONFIGURATION_FILE)
+    configfile = os.path.abspath(os.path.expanduser(options.cfile or CONFIGURATION_FILE))
     pidfile = os.path.abspath(os.path.expanduser(options.pidfile or PIDFILE))
     get_config_callback = misc.partial_function(get_config, configfile) 
     return start_server(get_config_callback, pidfile, ignore_mask)
