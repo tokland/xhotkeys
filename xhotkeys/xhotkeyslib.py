@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 """
 Listen to keyboard and mouse combinations and run callbacks. Example:
 

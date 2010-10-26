@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 import configobj
 
 def string2bool(s):
