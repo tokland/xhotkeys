@@ -39,6 +39,11 @@ import subprocess
 # Third-party mdoules
 import Xlib
 from Xlib import X 
+try:
+    import pyosd
+    pyosdobj = pyosd.osd(lines=2)
+except ImportError:
+    pyosdobj = None
 
 # Application modules
 import xhotkeys
@@ -89,7 +94,20 @@ def on_sighup(signum, frame):
     logging.debug("on_sighup: signum=%s, frame=%s" % (signum, frame))
     logging.info("reload exception raised")
     raise XhotkeysServerReload
-   
+
+def show_osd(*lines):
+    """Show lines in global OSD object."""
+    if not pyosdobj:
+        return
+    pyosdobj.set_pos(pyosd.POS_MID)
+    pyosdobj.set_align(pyosd.ALIGN_CENTER)
+    pyosdobj.set_colour("#FF0000")
+    pyosdobj.set_timeout(1)
+    pyosdobj.set_shadow_offset(2)
+    pyosdobj.set_font("-*-times-*-r-*-*-*-200-*-*-*-*-*-*")
+    for index, line in enumerate(lines):
+        pyosdobj.display(line, line=index)
+       
 def on_hotkey(state, dcombinations, combination):
     """
     Callback run with a combination is detected.
@@ -111,6 +129,7 @@ def on_hotkey(state, dcombinations, combination):
     elif len(hotkeys) == 1:
         hotkey, finished = hotkeys[0]
         if finished:
+            show_osd(hotkey.name, hotkey.command)
             run_command(hotkey.command, directory=hotkey.directory)
             state.current_combination = []
             state.timeout = None

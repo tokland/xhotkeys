@@ -175,7 +175,7 @@ class XhotkeysServer:
             mask = event.state & ~self.ignore_mask
             key = (event.type, event.detail, mask)
             if key not in self.callbacks:
-                print "warning: undefined event received: %s" % list(key)
+                print("warning: undefined event received: %s" % list(key))
                 continue
             callback, args = self.callbacks[key]
             callback(*args)
