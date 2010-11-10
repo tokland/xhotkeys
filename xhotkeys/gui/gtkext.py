@@ -83,10 +83,9 @@ class EasyFileChooserDialog(gtk.FileChooserDialog):
         - Accept/close buttons
         - Easy to use filters"""
         abutton, gtkaction, title = action_info
-        buttons = [
-          (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT), 
-          (abutton, gtk.RESPONSE_ACCEPT),
-        ]
+        buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT, abutton,
+                   gtk.RESPONSE_ACCEPT)
+        
         gtk.FileChooserDialog.__init__(self, title=title, buttons=buttons, action=gtkaction)
         self.set_filename(filename)
         for name, mime_types, patterns in (filtersdef or []):
