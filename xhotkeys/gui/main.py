@@ -273,12 +273,12 @@ class HotkeyListWindow(gtk.Window):
         self.pidfile = pidfile        
         self.widgets = {}
         
-        gtk.Window.__init__(self)        
+        gtk.Window.__init__(self)
         columns = [
             gtkext.Column("name", sorted=True, tooltip="Name of hotkey", width=100),
             gtkext.Column("command", tooltip="Command to run", width=200),
             gtkext.Column("binding", tooltip="Hotkey binding", width=200),
-            gtkext.Column("show_osd", title="Show OSD", tooltip="On Screen Display", data_type=bool, width=100),
+            gtkext.Column("show_osd", title="Show OSD", tooltip="On Screen Display", data_type=bool, width=100, editable=True),
         ]
 
         box = gtk.VBox()
@@ -290,6 +290,10 @@ class HotkeyListWindow(gtk.Window):
         self.add(box)
         self.connect("destroy", lambda window: gtk.main_quit())
         hotkeys_list = hotkeys_list_box.object_list
+        def on_cell_edited(objectlist, hotkey, attr):
+            hotkey.save()
+            self.reload_server(self.pidfile)
+        hotkeys_list.connect("cell-edited", on_cell_edited)
         
         def _button(stock, where, callback, *callback_args):
             button = gtk.Button(stock=stock)

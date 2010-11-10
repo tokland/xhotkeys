@@ -131,7 +131,6 @@ def on_hotkey(state, dcombinations, combination):
     elif len(hotkeys) == 1:
         hotkey, finished = hotkeys[0]
         if finished:
-            print hotkey
             if hotkey.show_osd:
                 show_osd(hotkey.name, hotkey.command)
             run_command(hotkey.command, directory=hotkey.directory)

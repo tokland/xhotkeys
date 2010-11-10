@@ -88,7 +88,7 @@ class ConfigObjModel:
             if self._name:
                 self.__class__.config.rename(self._name, name_value )
             self._name = name_value
-        self.__class__.config[self._name] = new_attributes  
+        self.__class__.config[self._name] = new_attributes
         self.__class__.config.write()
         
     def delete(self):
