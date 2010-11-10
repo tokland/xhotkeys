@@ -148,18 +148,12 @@ class HotkeyWindow(gtk.Window):
 
     def hotkey_form(self, hotkey, hotkeys_list,  
             save_callback, cancel_callback, pidfile, action):    
-        def string2bool(s):
-            if isinstance(s, bool):
-                return s
-            return (s.lower() in ("true", "yes", "on", "1"))
-        def bool2string(state):
-            return ("on" if state else "off")    
         def attribute(name, widget_class=gtk.Entry):
             functions = {
                 gtk.Entry: [gtk.Entry.set_text, gtk.Entry.get_text],
                 gtk.CheckButton: [
-                    lambda widget, s: widget.set_active(string2bool(s)),
-                    lambda widget: bool2string(widget.get_active()),
+                    lambda widget, state: widget.set_active(state),
+                    lambda widget: widget.get_active(),
                 ]                
             }
             hbox = gtk.HBox()
@@ -242,7 +236,7 @@ class HotkeyWindow(gtk.Window):
         self.destroy()
                     
     def on_hotkey_save__clicked(self, params, action):
-        if self.hotkey.valid(params):        
+        if self.hotkey.valid(params):
             self.save_hotkey(self.hotkey, params)
             self.on_save(self.hotkey, action)
 
@@ -284,12 +278,12 @@ class HotkeyListWindow(gtk.Window):
             gtkext.Column("name", sorted=True, tooltip="Name of hotkey", width=100),
             gtkext.Column("command", tooltip="Command to run", width=200),
             gtkext.Column("binding", tooltip="Hotkey binding", width=200),
-            gtkext.Column("show_osd", title="Show OSD", tooltip="On Screen Display", width=100),
+            gtkext.Column("show_osd", title="Show OSD", tooltip="On Screen Display", data_type=bool, width=100),
         ]
 
         box = gtk.VBox()
         Hotkey.init(configfile)
-        hotkeys = Hotkey.items()        
+        hotkeys = Hotkey.items()
         hotkeys_list_box = gtkext.ObjectListBox(columns, hotkeys,
             selection_mode=gtk.SELECTION_MULTIPLE)
         box.pack_start(hotkeys_list_box)
