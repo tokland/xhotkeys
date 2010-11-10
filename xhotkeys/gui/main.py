@@ -64,7 +64,7 @@ class EasyFileChooserDialog(gtk.FileChooserDialog):
             self.add_filter(filt)
 
 class HotkeyWindow(gtk.Window):
-    """Window with hotkey form: name, command, binding, directory.
+    """Window with hotkey form: name, command, binding, directory, show_osd.
     
     Actions: Cancel, Save.
     """     
@@ -217,6 +217,7 @@ class HotkeyWindow(gtk.Window):
             ("binding", gtk.Entry, {"sensitive": False, 
                                     "action": binding_button}),
             ("directory", gtk.Entry, {"action": browse_directory_button}),
+            ("show_osd", gtk.CheckButton, {}),
         ]
         widgets = {}
         for name, widget_class, options in attributes_view:
@@ -226,8 +227,6 @@ class HotkeyWindow(gtk.Window):
                 widget.set_sensitive(options["sensitive"])
             if "action" in options:
                 abox.pack_start(options["action"], expand=False)
-            if widget_class is gtk.Entry:
-                widget.connect("activate", on_save_button__clicked)
             def on_form_widget__changed(entry, name=name):
                 if name == "binding":
                     return
@@ -236,8 +235,15 @@ class HotkeyWindow(gtk.Window):
                 color = "white" if isvalid else "#FFDDBB"
                 entry.modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse(color)) 
                 save_button.set_sensitive(hotkey.valid(params))
-            widget.connect("changed", on_form_widget__changed)
-            widget.emit("changed")
+            def on_form_widget__toggled(checkbutton, name=name):
+                return
+            if widget_class is gtk.Entry:
+                widget.connect("activate", on_save_button__clicked)
+                widget.connect("changed", on_form_widget__changed)
+                widget.emit("changed")
+            if widget_class is gtk.CheckButton:
+                widget.connect("toggled", on_form_widget__toggled)
+                widget.emit("toggled")
             box.pack_start(abox)
             widgets[name] = widget
         widgets["name"].set_width_chars(40)
@@ -301,12 +307,13 @@ class HotkeyListWindow(gtk.Window):
             gtkext.Column("name", sorted=True, tooltip="Name of hotkey", width=100),
             gtkext.Column("command", tooltip="Command to run", width=200),
             gtkext.Column("binding", tooltip="Hotkey binding", width=200),
+            gtkext.Column("show_osd", title="Show OSD", tooltip="On Screen Display", width=100),
         ]
 
         box = gtk.VBox()
         Hotkey.init(configfile)
         hotkeys = Hotkey.items()        
-        hotkeys_list_box = gtkext.ObjectListBox(columns, hotkeys, 
+        hotkeys_list_box = gtkext.ObjectListBox(columns, hotkeys,
             selection_mode=gtk.SELECTION_MULTIPLE)
         box.pack_start(hotkeys_list_box)
         self.add(box)

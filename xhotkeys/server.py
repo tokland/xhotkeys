@@ -10,11 +10,13 @@ Configuration file (similar to INI-files) should look like this:
         binding = <ControlMask><Mod1Mask>C
         command = /usr/bin/xcalc
         directory = ~
+        show_osd = off
 
     [abiword]
         binding = <ControlMask><Mod1Mask>Button2
         command = abiword ~/mydocs/readme.txt
         directory = ~/mydocs/
+        show_osd = on
     
 And the daemon can be started from the shell this way:
 
@@ -129,7 +131,8 @@ def on_hotkey(state, dcombinations, combination):
     elif len(hotkeys) == 1:
         hotkey, finished = hotkeys[0]
         if finished:
-            show_osd(hotkey.name, hotkey.command)
+            if hotkey.show_osd:
+                show_osd(hotkey.name, hotkey.command)
             run_command(hotkey.command, directory=hotkey.directory)
             state.current_combination = []
             state.timeout = None
@@ -222,6 +225,7 @@ def start_server(get_config_callback, pidfile=None, ignore_mask=None):
             "binding": "<ControlMask><Mod1Mask>C",
             "directory": "~",
             "command": "xcalc",
+            "show_osd": "on",
         }
     }
     
