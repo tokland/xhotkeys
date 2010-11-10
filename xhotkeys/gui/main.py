@@ -40,29 +40,6 @@ ALLOWED_MASKS = [
 def get_params(form):
     return dict((attr, func()) for attr, func in form.iteritems())
 
-class EasyFileChooserDialog(gtk.FileChooserDialog):    
-    def __init__(self, action_info, filename=None, filtersdef=None):
-        """Create and return a GTK FileChooserDialog with basic support:
-
-        - Escape closes the window
-        - Accept/close buttons
-        - Easy to use filters"""
-        abutton, gtkaction, title = action_info
-        buttons = ((gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT) + 
-            (abutton, gtk.RESPONSE_ACCEPT))
-        gtk.FileChooserDialog.__init__(self, title=title, buttons=buttons,
-            action=gtkaction)
-        self.connect("key-press-event", self._on_key)
-        self.set_filename(filename)
-        for name, mime_types, patterns in (filtersdef or []):
-            filt = gtk.FileFilter()
-            filt.set_name(name)
-            for mt in mime_types:
-                filt.add_mime_type(mt)
-            for pattern in patterns:
-                filt.add_patern(pattern)    
-            self.add_filter(filt)
-
 class HotkeyWindow(gtk.Window):
     """Window with hotkey form: name, command, binding, directory, show_osd.
     
@@ -284,7 +261,7 @@ class HotkeyWindow(gtk.Window):
             directory = os.path.expanduser("~")                         
         action_info = (gtk.STOCK_OPEN, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER, 
             "Select directory where the command will start")            
-        dialog = EasyFileChooserDialog(action_info, directory)
+        dialog = gtkext.EasyFileChooserDialog(action_info, directory)
         if dialog.run() == gtk.RESPONSE_ACCEPT:
             directory = dialog.get_filename()
             entry.set_text(directory)

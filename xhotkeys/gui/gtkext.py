@@ -86,7 +86,6 @@ class EasyFileChooserDialog(gtk.FileChooserDialog):
             (abutton, gtk.RESPONSE_ACCEPT))
         gtk.FileChooserDialog.__init__(self, title=title, buttons=buttons,
             action=gtkaction)
-        self.connect("key-press-event", self._on_key)
         self.set_filename(filename)
         for name, mime_types, patterns in (filtersdef or []):
             filt = gtk.FileFilter()
@@ -96,10 +95,3 @@ class EasyFileChooserDialog(gtk.FileChooserDialog):
             for pattern in patterns:
                 filt.add_patern(pattern)    
             self.add_filter(filt)
-
-    def _on_key(self, widget, event):
-        if event.keyval in [gtk.keysyms.Return]:
-            self.emit("response", gtk.RESPONSE_ACCEPT)
-        elif event.keyval in [gtk.keysyms.Escape]:
-            self.emit("response", gtk.RESPONSE_REJECT)
-        
