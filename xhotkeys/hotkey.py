@@ -103,8 +103,9 @@ class Hotkey(ConfigObjModel):
         "binding": dict(type="string"),
         "directory": dict(type="string", default="~"),
         "show_osd": dict(type="boolean", default=False),
+        "active": dict(type="boolean", default=True),
     }
     
     def __repr__(self):
-        return "Hotkey(name=%s, binding=%s, command=%s show_osd=%s" % \
-            tuple(map(repr, (self.name, self.binding, self.command, self.show_osd)))
+        return "Hotkey(name=%s, active=%s, binding=%s, command=%s show_osd=%s" % \
+            tuple(map(repr, (self.name, self.active, self.binding, self.command, self.show_osd)))

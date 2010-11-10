@@ -41,7 +41,7 @@ def get_params(form):
     return dict((attr, func()) for attr, func in form.iteritems())
 
 class HotkeyWindow(gtk.Window):
-    """Window with hotkey form: name, command, binding, directory, show_osd.
+    """Window with hotkey form.
     
     Actions: Cancel, Save.
     """     
@@ -188,6 +188,7 @@ class HotkeyWindow(gtk.Window):
             ("binding", gtk.Entry, {"sensitive": False, 
                                     "action": binding_button}),
             ("directory", gtk.Entry, {"action": browse_directory_button}),
+            ("active", gtk.CheckButton, {}),
             ("show_osd", gtk.CheckButton, {}),
         ]
         widgets = {}
@@ -278,7 +279,8 @@ class HotkeyListWindow(gtk.Window):
             gtkext.Column("name", sorted=True, tooltip="Name of hotkey", width=100),
             gtkext.Column("command", tooltip="Command to run", width=200),
             gtkext.Column("binding", tooltip="Hotkey binding", width=200),
-            gtkext.Column("show_osd", title="Show OSD", tooltip="On Screen Display", data_type=bool, width=100, editable=True),
+            gtkext.Column("active", title="Active", tooltip="Active hotkey", data_type=bool, width=100, editable=True),
+            gtkext.Column("show_osd", title="OSD", tooltip="On Screen Display", data_type=bool, width=100, editable=True),
         ]
 
         box = gtk.VBox()
