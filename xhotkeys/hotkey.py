@@ -102,7 +102,7 @@ class Hotkey(ConfigObjModel):
         "command": dict(type="string", void=False),
         "binding": dict(type="string"),
         "directory": dict(type="string", default="~"),
-        "show_osd": dict(type="string", default="off"),
+        "show_osd": dict(type="boolean", default=False),
     }
     
     def __repr__(self):

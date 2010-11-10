@@ -74,6 +74,7 @@ class ObjectListBox(gtk.HBox):
         self.on_item_selected(self.object_list, None)
         
 class EasyFileChooserDialog(gtk.FileChooserDialog):
+    """Simple wrapper over gtk.FileChooserDialog with simple file-filter management."""
     
     def __init__(self, action_info, filename=None, filtersdef=None):
         """Create and return a GTK FileChooserDialog with basic support:
@@ -82,10 +83,11 @@ class EasyFileChooserDialog(gtk.FileChooserDialog):
         - Accept/close buttons
         - Easy to use filters"""
         abutton, gtkaction, title = action_info
-        buttons = ((gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT) + 
-            (abutton, gtk.RESPONSE_ACCEPT))
-        gtk.FileChooserDialog.__init__(self, title=title, buttons=buttons,
-            action=gtkaction)
+        buttons = [
+          (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT), 
+          (abutton, gtk.RESPONSE_ACCEPT),
+        ]
+        gtk.FileChooserDialog.__init__(self, title=title, buttons=buttons, action=gtkaction)
         self.set_filename(filename)
         for name, mime_types, patterns in (filtersdef or []):
             filt = gtk.FileFilter()
@@ -93,5 +95,5 @@ class EasyFileChooserDialog(gtk.FileChooserDialog):
             for mt in mime_types:
                 filt.add_mime_type(mt)
             for pattern in patterns:
-                filt.add_patern(pattern)    
+                filt.add_patern(pattern)
             self.add_filter(filt)
