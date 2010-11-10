@@ -17,11 +17,13 @@ config = {
         "binding": "<Control><Alt>1",
         "directory": "~",
         "command": "xcalc",
+        "show_osd": False
     },
     "abiword": {
         "binding": "<Control><Alt>Button2",
         "directory": "~/mydocs/",
         "command": "abiword ~/mydocs/readme.txt",
+        "show_osd": True
     },        
 }
 
@@ -30,11 +32,13 @@ config_contents = """
         binding = <Control><Alt>1
         directory = ~
         command = xcalc
+        show_osd = False
 
     [abiword]
         binding = <Control><Alt>Button2
         directory = ~/mydocs/
         command = abiword ~/mydocs/readme.txt
+        show_osd = True
 """
             
 class XhotkeysServerTest(unittest.TestCase):
