@@ -195,8 +195,9 @@ def configure_server(server, hotkeys):
           else: 
               modifiers = []        
           mask = sum(modifiers_masks[modifier.lower()] for modifier in modifiers)
-          combination = (binding_type, mask, keycode)
-          combinations.append(combination)
+          if binding_type == "keyboard":
+            combination = (binding_type, mask, keycode)
+            combinations.append(combination)
         return (hotkey, combinations)
 
     dcombinations = dict(misc.compact(get_combination_from_hotkey(h) for h in hotkeys if h.active))

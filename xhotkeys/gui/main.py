@@ -157,7 +157,7 @@ class HotkeyWindow(gtk.Window):
                 ]                
             }
             hbox = gtk.HBox()
-            label = gtk.Label(name.title()+":")
+            label = gtk.Label(name.title().replace("_", " ") + ":")
             label.set_width_chars(10)
             label.set_alignment(0.0, 0.5)
             value = getattr(hotkey, name)
@@ -276,9 +276,9 @@ class HotkeyListWindow(gtk.Window):
         
         gtk.Window.__init__(self)
         columns = [
-            gtkext.Column("name", sorted=True, tooltip="Name of hotkey", width=100),
-            gtkext.Column("command", tooltip="Command to run", width=200),
-            gtkext.Column("binding", tooltip="Hotkey binding", width=200),
+            gtkext.Column("name", sorted=True, tooltip="Name of hotkey", width=150),
+            gtkext.Column("command", tooltip="Command to run", width=250),
+            gtkext.Column("binding", tooltip="Hotkey binding", width=150),
             gtkext.Column("active", title="Active", tooltip="Active hotkey", data_type=bool, width=100, editable=True),
             gtkext.Column("show_osd", title="OSD", tooltip="On Screen Display", data_type=bool, width=100, editable=True),
         ]
@@ -442,7 +442,7 @@ def main(args):
     icon = (os.path.join(directory, "xhotkeys.xpm") if directory else None)
     window = HotkeyListWindow(configfile, pidfile, icon)    
     window.show_all()
-    window.resize(700, 300)
+    window.resize(900, 500)
     gtk.main()
         
         
