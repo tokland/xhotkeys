@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 """Run command on hotkeys (keyboard & mouse) for X-Windows"""
 
-# Copyright (c) 2008-2009 Arnau Sanchez <tokland@gmail.com>
+# Copyright (c) 2008-2009 Arnau Sanchez <pyarnau@gmail.com>
 
 # This file is part of xhotkeys.
 
