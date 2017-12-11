@@ -26,8 +26,6 @@ $ xhotkeysd -f xhotkeys.conf
 
 If the configuration file is not specified, ~/.xhotkeysrc or 
 /etc/xhotkeys.conf files will be used. 
-
-Pidfile is stored at ~/.xhotkeys.pid by default.
 """
 import os
 import re
@@ -57,7 +55,6 @@ from xhotkeys.hotkey import Hotkey
 # Global values
 VERSION = "0.1.3"
 CONFIGURATION_FILE = "~/.xhotkeysrc"
-PIDFILE = "~/.xhotkeys.pid"
 
 modifiers_name = {
     X.ShiftMask: "Shift",
@@ -76,12 +73,9 @@ class XhotkeysServerReload(Exception):
     """Raised when the configuration must be reload."""
     pass
         
-def on_terminate(server, pidfile, signum, frame):
+def on_terminate(server, signum, frame):
     """Called when the process is asked to terminate."""
     logging.debug("on_terminate: signum=%s, frame=%s" % (signum, frame))
-    if pidfile and os.path.isfile(pidfile):
-        logging.info("deleting pidfile: %s" % pidfile)
-        os.remove(pidfile)
     logging.info("clearing all X grabs")        
     server.clear_grabs()
     logging.info("exiting...")
@@ -161,12 +155,12 @@ def run_command(command, shell=True, directory=None, **popen_kwargs):
     else:
         return popen
     
-def set_signal_handlers(server, pidfile):
+def set_signal_handlers(server):
     """Set signal handlers."""
     logging.debug("setting signal handlers")
     signal.signal(signal.SIGCHLD, on_sigchild)
     signal.signal(signal.SIGHUP, on_sighup) 
-    terminate_callback = misc.partial_function(on_terminate, server, pidfile)
+    terminate_callback = misc.partial_function(on_terminate, server)
     signal.signal(signal.SIGTERM, terminate_callback)
     signal.signal(signal.SIGINT, terminate_callback)
 
@@ -215,7 +209,7 @@ def configure_server(server, hotkeys):
             logging.info("grabbing mouse button: %s/%s" % (mask, button))
             server.add_button_grab(button, mask, callback)
             
-def start_server(get_config_callback, pidfile=None, ignore_mask=None):
+def start_server(get_config_callback, ignore_mask=None):
     """
     Start a xhotkeys server linking key bindings to commands.
         
@@ -235,15 +229,12 @@ def start_server(get_config_callback, pidfile=None, ignore_mask=None):
     
     >>> start_server(lambda: config)
     """
-    if not write_pidfile(pidfile):
-        logging.critical("xhotkeys server already running (see %s)" % pidfile)
-        return 2
     logging.info("starting xhotkeys server")
     if ignore_mask is None:
         ignore_mask = X.LockMask | X.Mod2Mask | X.Mod5Mask
     logging.debug("ignore mask value: %s" % ignore_mask)
     server = xhotkeys.XhotkeysServer(ignore_mask)
-    set_signal_handlers(server, pidfile)
+    set_signal_handlers(server)
     while 1:   
         try:
             config = get_config_callback()
@@ -261,22 +252,6 @@ def get_config(configfile):
     logging.info("load configuration: %s" % configfile)
     Hotkey.init(configfile)
     return Hotkey.items()
-
-def write_pidfile(pidfile):
-    """Write a pidfile with current process PID."""
-    logging.debug("checking existence of pidfile: %s" % pidfile)
-    if os.path.isfile(pidfile):
-        try:
-            pid = int(open(pidfile).read())
-        except ValueError:
-            pid = None
-        if pid and os.path.exists("/proc/%s" % pid):
-            logging.debug("pidfile exists and pid %s is a running process" % pid)
-            return
-    logging.debug("creating pidfile: %s" % pidfile)
-    pid = os.getpid()
-    open(pidfile, "w").write("%d\n" % pid)
-    return pid
 
 def show_keyboard_info(ignore_mask, stream=None):
     """Show keyboard info (keys and available modifiers) to stream."""
@@ -301,8 +276,6 @@ def main(args):
         action="count", help='Increase verbose level')
     parser.add_option('-c', '--config-file', dest='cfile', default=None, 
         metavar='FILE', type='string', help='Alternative configuration file')        
-    parser.add_option('-p', '--pid-file', dest='pidfile', default=None, 
-        metavar='FILE', type='string', help='Alternative pidfile')
     parser.add_option('-i', '--key-info', dest='keyinfo', default=False, 
         action='store_true', help='Show keyboard info')                        
     options, args = parser.parse_args(args)
@@ -316,9 +289,8 @@ def main(args):
         return    
     # Get absolute path for the files as current directory is likely to change
     configfile = os.path.abspath(os.path.expanduser(options.cfile or CONFIGURATION_FILE))
-    pidfile = os.path.abspath(os.path.expanduser(options.pidfile or PIDFILE))
     get_config_callback = misc.partial_function(get_config, configfile) 
-    return start_server(get_config_callback, pidfile, ignore_mask)
+    return start_server(get_config_callback, ignore_mask)
         
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
